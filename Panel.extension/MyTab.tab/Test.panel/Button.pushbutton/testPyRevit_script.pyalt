@@ -1,0 +1,144 @@
+#imoprt pyrevit libraries
+from pyrevit import revit, DB
+from pyrevit import forms,script, EXEC_PARAMS
+from pyrevit.forms import WPFWindow
+from Autodesk.Revit.DB import *
+import System
+from System import Enum
+## Creat an Msg Window in Revit
+# forms.alert("some text", "some title")
+
+
+# Application Members
+doc = __revit__.ActiveUIDocument.Document
+uidoc = __revit__.ActiveUIDocument
+app = __revit__.Application
+
+
+print("ImportIFCCategoryTable :  ", app.ImportIFCCategoryTable)
+
+## Get shared parameters
+# Get all definitions and names from the active SharedParameterfile
+
+#spFile = app.SharedParameterElement.Creat(doc, )
+
+spFile   = app.OpenSharedParameterFile()
+print(spFile.Filename)
+spGroups = spFile.Groups
+
+# print("spGroups:  ",spGroups)
+# print("IsEmpty:  ", spGroups.IsEmpty)
+print("Item:  ",spGroups.Item)
+print("Size:  ",spGroups.Size)
+
+sParameterList = []
+
+for group in spGroups:
+    # print("group:  ", group)
+    # print("Definitions:  ", group.Definitions)
+    print("GroupName:  ", group.Name)
+
+    for parameter in group.Definitions:
+        sParameterList.append(parameter)
+
+for parameter in sParameterList[:10]:
+        # print("parameter:  ", parameter)
+        print("parameterGUID:  ", parameter.GUID)
+        print("parameterName:  ", parameter.Name)
+        print("parameterVisible:  ", parameter.Visible)
+        print("parameterDexcription:  ", parameter.Description)
+
+#An enumerated type listing all of the built-in parameter groups supported by Autodesk Revit. 
+print("BuiltInParameterGroup", System.Enum.GetValues(DB.BuiltInParameterGroup))
+#An enumerated type listing all of the built-in parameter IDs supported by Autodesk Revit. 
+print("BuiltInParameter", System.Enum.GetValues(DB.BuiltInParameter))
+
+
+#Document Members
+# doc = revit.doc
+
+
+# print("ProjectInformationName :  ", doc.ProjectInformation.Name)
+# print("ProjectInformationNumber :  ", doc.ProjectInformation.Number)
+# print("ProjectInformationStatuse :  ", doc.ProjectInformation.Status)
+# print("ProjectInformationAddress :  ", doc.ProjectInformation.Address)
+# print("ProjectInformationClientName :  ", doc.ProjectInformation.ClientName)
+
+CategorieSet = []
+print("ParameterBindings  :  ", doc.ParameterBindings)
+for parameter in doc.ParameterBindings:
+    print("InstanceBinding:  ", parameter)
+    # print("InstanceBinding.Categories:  ", parameter.Categories)
+    
+    # CategorieSet.append(parameter.Categories)
+
+print("ParameterBindingsItem  :  ", doc.ParameterBindings.Item)
+
+# for categorie in CategorieSet[:10]:
+#     print(categorie)
+#     # print(categorie.IsEmpty)
+#     # print(categorie.Size)
+#     # print(categorie.ForwardIterator())
+    
+ 
+#     for it in categorie.ForwardIterator():
+#          print("ForwardIterator:  ", it.Name)
+
+#Get Element by ID
+ElementID = ElementId(2423663) #IfcName: Wand 1
+
+element = doc.GetElement(ElementID)
+ElementParameter = element.Parameters
+
+#Get Element by Filter
+all_walls = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Walls).WhereElementIsNotElementType().ToElements()
+
+for wall in all_walls:
+     print(wall.Id)
+
+# print("GetElement:  ", doc.GetElement)
+# print("GetElement:  ", element)
+# print("ElementParamters:  ", ElementParameter)
+# print("ElementParamtersList:  ", list(ElementParameter))
+
+# for parameter in ElementParameter:
+#      print(parameter)
+#      print(parameter.Definition.Name)
+#      print(parameter.StorageType)
+#      print(parameter.IsShared)
+#      print("-"*50)
+
+#Get Built-In Paramters
+element_comments = element.get_Parameter(BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS)
+element_type_name = element.get_Parameter(BuiltInParameter.ALL_MODEL_TYPE_NAME)
+print(element_type_name.AsValueString())
+
+#Get Shared Paramter
+sp_Name = element.LookupParameter('IfcName')
+print(sp_Name.AsString())
+
+# Set Parameter Value
+# for manipulate Revitfile out of revit ist an Transaction needed
+t = Transaction(doc, "__title__")
+
+#Start Transaction:
+t.Start()
+
+#Made Changes
+sp_IfcDescription = element.LookupParameter('IfcDescription')
+
+sp_IfcDescription.Set('das ist eine Beschreibung ergaenzt durch pyRevit')
+
+
+#End Transaction:
+t.Commit()
+
+
+#check if we are running alternatively
+my_check = EXEC_PARAMS.config_mode
+
+# print(my_check)
+
+ops = ['option1', 'option2', 'option3', 'option4']
+forms.CommandSwitchWindow.show(ops, message='Select Option')
+'option2'
