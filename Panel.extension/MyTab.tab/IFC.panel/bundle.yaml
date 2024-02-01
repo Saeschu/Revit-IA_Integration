@@ -1,5 +1,7 @@
 layout:
   - SetUpIFCProjectParameter
+  - ImportIDS 
   - SetNewIfcParameter
-  - ImportIDS
+  - StartIDSTesting
+  
   

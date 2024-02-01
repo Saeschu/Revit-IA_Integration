@@ -95,7 +95,7 @@ for specification in my_ids.specifications:
 db["IfcCategoryMapping"] = get_RevitElementFromIFCmapping(Entitylist, IfcCategoryMappingFile)
 my_ids.to_xml(idsxml)
 
-file = open(dbjson, "w")
+file = open(dbPath, "w")
 jsonString = json.dumps(db)
 
 file.write(jsonString)

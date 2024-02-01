@@ -1,25 +1,62 @@
+#! python3
 
 ##Test Pyrevit###
 print('### START ###')
 #############################################################################
-from pyrevit import revit, DB
-from pyrevit import forms,script, EXEC_PARAMS
-from pyrevit.forms import WPFWindow
+# from pyrevit import revit, DB, forms,script, EXEC_PARAMS
+# from pyrevit.forms import WPFWindow
+# from Autodesk.Revit.DB import *
+# import System
+# from System import Enum
+# import sys
+# import clr
+# import json
+# import time
+
+# import ifcopenshell
+import ifctester
+import re
+import json
+
+from pyrevit import EXEC_PARAMS, DB
 from Autodesk.Revit.DB import *
 import System
 from System import Enum
-import sys
-import clr
-import json
-import time
 ##############################################################################
 
 ##############################################################################
 # Application Members
-doc = __revit__.ActiveUIDocument.Document
-uidoc = __revit__.ActiveUIDocument
-app = __revit__.Application
+# doc = __revit__.ActiveUIDocument.Document
+# uidoc = __revit__.ActiveUIDocument
+# app = __revit__.Application
 ##############################################################################
+
+# output = script.get_output()
+# output.add_style('body { color: blue; }')
+##############################################################################
+### Variables
+
+IsIDScheckingPath = "C:\\temp\\revit\\IsIDSChecking.json"
+idsxml = "C:\\temp\\revit\\ids.xml"
+dbPath = "C:\\temp\\revit\\db.json"
+
+with open(IsIDScheckingPath) as IsIDSchecking:
+    isChecking = json.load(IsIDSchecking)
+
+##############################################################################
+
+
+if isChecking['IsIDSChecking'] == True:
+    isChecking['IsIDSChecking'] = False
+    print(isChecking['IsIDSChecking'])
+else:
+    isChecking['IsIDSChecking'] = True
+
+IsIDSchecking = open(IsIDScheckingPath, "w")
+jsonString = json.dumps(isChecking)
+
+IsIDSchecking.write(jsonString)
+IsIDSchecking.close()    
 
 
 
