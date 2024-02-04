@@ -11,10 +11,8 @@ from System import Enum
 import clr
 import json
 
-##############################################################################
-# def get_RevitElementFromIFCmapping(Entity):
 
-#     return
+##############################################################################
 
 ##############################################################################
 def set_new_parameter_to_Category(app, spFile,builtinCategory, paramterGroupName, parameter_name, paramter_DataType, tooltip):

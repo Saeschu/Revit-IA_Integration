@@ -22,9 +22,9 @@ app = __revit__.Application
   
 
 #Check Requirements
-def getRequirements(requ):
+def getRequirements(requ, appliName):
 
-    print(f'All {appli.name} data')
+    print(f'All {appliName} data')
 
     if requ.__class__.__name__ == "Attribute":
         if requ.value != None:                                            
@@ -86,6 +86,8 @@ def getRequirements(requ):
 
     print()
 
+
+
 ##############################################################################
 
 
@@ -122,7 +124,7 @@ for Entity in db['IfcCategoryMapping']:
                 
                 if appli.__class__.__name__ == 'Entity':      
                         
-                    if str(cat) in db['IfcCategoryMapping'][appli.name]:
+                    if appli.name in db['IfcCategoryMapping'] and str(cat) in db['IfcCategoryMapping'][appli.name]:
 
                         print('\n')
                         print(20*'-')
@@ -130,14 +132,34 @@ for Entity in db['IfcCategoryMapping']:
                         print(f'The specification is {specification.get_usage()}')
 
                         for requ in specification.requirements:
-                            getRequirements(requ)
+                            getRequirements(requ, appli.name)
                                 
                         
                 elif appli.__class__.__name__ == 'Attribute':
-                    print('Applicability is at Facet Attibute, Checking is in procress')        
+                    for parameter in element.Parameters:
+                        
+                        if parameter.Definition.Name == appli.name:
+                            
+                            print('\n')
+                            print(20*'-')
+                            print(specification.name)
+                            print(f'The specification is {specification.get_usage()}')
+
+                            for requ in specification.requirements:
+                                getRequirements(requ, appli.name)       
 
                 elif appli.__class__.__name__ == 'Property':
-                    print('Applicability is at Facet property, Checking is in procress')
+                     for parameter in element.Parameters:
+                        
+                        if parameter.Definition.Name == appli.name:
+                            
+                            print('\n')
+                            print(20*'-')
+                            print(specification.name)
+                            print(f'The specification is {specification.get_usage()}')
+
+                            for requ in specification.requirements:
+                                getRequirements(requ, appli.name) 
                     
                 elif appli.__class__.__name__ == 'Classification':
                   
@@ -151,7 +173,7 @@ for Entity in db['IfcCategoryMapping']:
                             print(f'The specification is {specification.get_usage()}')
 
                             for requ in specification.requirements:
-                                getRequirements(requ)
+                                getRequirements(requ, appli.system)
                 
 
                 elif appli.__class__.__name__ == 'Parts':
@@ -164,11 +186,21 @@ for Entity in db['IfcCategoryMapping']:
     else:
         print('Entity ist nicht Teil der geladenen Informationsanforderung')    
 
+
+print(20*'-')
 for parameter in element.Parameters:
     # print(parameter)
     if parameter.Definition.Name == 'Classification.Space.Number':
-        Selected_Dictionary = 'FM waveware Spital'
+        print(10*'-')
+        sp_Name = element.LookupParameter('Classification.Space.Description')
+        Selected_Dictionary = sp_Name.AsString()
         Selected_Class = parameter.AsValueString()
-        getbSDDRequest(Selected_Dictionary, Selected_Class)
+
+        print(Selected_Dictionary, Selected_Class)
+
+        try:
+            getbSDDRequest(Selected_Dictionary, Selected_Class)
+        except:
+            print('Error occurs while bSDD request')
 
 print('Ende')
