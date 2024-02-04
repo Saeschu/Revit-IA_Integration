@@ -1,6 +1,6 @@
 #! python3
 ### SATART of CODE ImportIDS ###
-print('\n### SATART of CODE ImportIDS ###')
+# print('\n### SATART of CODE ImportIDS ###')
 ##############################################################################
 # import ifcopenshell
 import ifctester
@@ -22,9 +22,9 @@ with open(IsIDScheckingPath) as IsIDSchecking:
     isChecking = json.load(IsIDSchecking)
 
 ##############################################################################
-          
+
 #Check Requirements
-def checkRequirements(requ, Revit_parameter, Revit_parameterValue):
+def checkRequirementValue(requ, Revit_parameter, Revit_parameterValue):
 
     if requ.value != None:
 
@@ -52,6 +52,45 @@ def checkRequirements(requ, Revit_parameter, Revit_parameterValue):
     else:
         pass
 
+
+#Requirements Facet
+def checkRequirements(element, requ):
+    if requ.__class__.__name__ == "Attribute" or requ.__class__.__name__ == "Property":
+        
+        # print(f'Applicability  {appli.name} - Requirement {requ.__class__.__name__}, {requ.name} : {requ.value} , {type(requ.value)}')
+        
+        Revit_parameter = element.LookupParameter(requ.name)
+        Revit_parameterName = requ.name #Revit_parameter.Name
+        Revit_parameterValue = Revit_parameter.AsValueString()
+
+        if Revit_parameterValue != None:
+            if requ.get_usage() != 'prohibited':
+                checkRequirementValue(requ, Revit_parameterName, Revit_parameterValue)
+            else:
+                print(f'WARNING : {Revit_parameterName} : Attributwerte darf nicht vorhanden sein')
+
+        elif requ.get_usage() == 'required':
+            print(f'WARNING : {Revit_parameterName} : Attributwerte muss vorhanden sein')
+
+    elif requ.__class__.__name__ == "Classification":
+        
+        # print(f'Applicability  {appli.name} - Requirement {requ.__class__.__name__}, {requ.system} : {requ.value} , {type(requ.value)}')
+        
+        Revit_parameter = element.LookupParameter('Classification.Space.Number')
+        Revit_parameterName = requ.system
+        Revit_parameterValue = Revit_parameter.AsValueString()
+        
+        if Revit_parameterValue != None:
+            checkRequirementValue(requ, Revit_parameterName, Revit_parameterValue)
+        elif requ.minOccurs == 1:
+            print(f'WARNING : {Revit_parameterName} : Attributwerte muss vorhanden sein')
+
+
+    elif requ.__class__.__name__ == "Parts":
+        print(' Requirement is at Facet Parts, Checking is in procress')
+
+    elif requ.__class__.__name__ == "Material":
+        print(' Requirement is at Facet Material, Checking is in procress')
 
 ##############################################################################
 ##### __MAIN__ #####
@@ -103,54 +142,68 @@ if isChecking['IsIDSChecking'] == True:
                                         
                                                 for requ in specification.requirements:
                                                     print(10*'-')
-                                                    #Requirements Facet
-                                                    if requ.__class__.__name__ == "Attribute" or requ.__class__.__name__ == "Property":
-                                                        
-                                                        # print(f'Applicability  {appli.name} - Requirement {requ.__class__.__name__}, {requ.name} : {requ.value} , {type(requ.value)}')
-                                                        
-                                                        Revit_parameter = element.LookupParameter(requ.name)
-                                                        Revit_parameterName = requ.name #Revit_parameter.Name
-                                                        Revit_parameterValue = Revit_parameter.AsValueString()
-
-                                                        if Revit_parameterValue != None:
-                                                            checkRequirements(requ, Revit_parameterName, Revit_parameterValue)
-                                                        elif requ.minOccurs == 1:
-                                                            print(f'WARNING : {Revit_parameterName} : Attributwerte muss vorhanden sein')
-
-                                                    elif requ.__class__.__name__ == "Classification":
-                                                        
-                                                        # print(f'Applicability  {appli.name} - Requirement {requ.__class__.__name__}, {requ.system} : {requ.value} , {type(requ.value)}')
-                                                        
-                                                        Revit_parameter = element.LookupParameter('Classification.Space.Number')
-                                                        Revit_parameterName = requ.system
-                                                        Revit_parameterValue = Revit_parameter.AsValueString()
-                                                        
-                                                        if Revit_parameterValue != None:
-                                                            checkRequirements(requ, Revit_parameterName, Revit_parameterValue)
-                                                        elif requ.minOccurs == 1:
-                                                            print(f'WARNING : {Revit_parameterName} : Attributwerte muss vorhanden sein')
+                                                    checkRequirements(element, requ)
 
 
-                                                    elif requ.__class__.__name__ == "Parts":
-                                                        print(' Requirement is at Facet Parts, Checking is in procress')
-
-                                                    elif requ.__class__.__name__ == "Material":
-                                                        print(' Requirement is at Facet Material, Checking is in procress')
-
-                                            
                                     elif appli.__class__.__name__ == 'Attribute':
-                                        print('Applicability is at Facet Attibute, Checking is in procress')        
+                                        for parameter in element.Parameters:
+                        
+                                            if parameter.Definition.Name == appli.name:
+                                                
+                                                print('\n')
+                                                print(20*'-')
+                                                print(specification.name)
+                                                print(f'The specification is {specification.get_usage()}')
+
+                                                for requ in specification.requirements:
+                                                    print(10*'-')
+                                                    try:
+                                                        checkRequirements(element, requ)
+                                                    except:
+                                                        print(f'Gefordertes Attribut "{requ.name}" ist nicht vorhanden')        
 
                                     elif appli.__class__.__name__ == 'Property':
-                                        print('Applicability is at Facet property, Checking is in procress')
+                                        for parameter in element.Parameters:
+                        
+                                            if parameter.Definition.Name == appli.name:
+                                                
+                                                print('\n')
+                                                print(20*'-')
+                                                print(specification.name)
+                                                print(f'The specification is {specification.get_usage()}')
+
+                                                for requ in specification.requirements:
+                                                    print(10*'-')
+                                                    try:
+                                                        checkRequirements(element, requ)
+                                                    except:
+                                                        print(f'Gefordertes Attribut "{requ.name}" ist nicht vorhanden')
                                         
                                     elif appli.__class__.__name__ == 'Classification':
-                                        print('Applicability is at Facet classification, Checking is in procress')
-                                
+                                        for parameter in element.Parameters:
+                        
+                                            if parameter.Definition.Name == 'Classification.Space.Number':
+                                                
+                                                print('\n')
+                                                print(20*'-')
+                                                print(specification.name)
+                                                print(f'The specification is {specification.get_usage()}')
+
+                                                for requ in specification.requirements:
+                                                    print(10*'-')
+                                                    try:
+                                                        checkRequirements(element, requ)
+                                                    except:
+                                                        print(f'Gefordertes Attribut "{requ.name}" ist nicht vorhanden')
+
+
                                     elif appli.__class__.__name__ == 'Parts':
+                                        # LevelId: Ebene 0, ID24770
+                                        # GetDependentElements (ElementFilter): List<ElementId>
                                         print('Applicability is at Facet Parts, Checking is in procress')        
                                     
                                     elif appli.__class__.__name__ == 'Material':
+                                        # GetMaterialIds (Boolean): ICollection<ElementId>
                                         print('Applicability is at Facet Material, Checking is in procress')  
 
 

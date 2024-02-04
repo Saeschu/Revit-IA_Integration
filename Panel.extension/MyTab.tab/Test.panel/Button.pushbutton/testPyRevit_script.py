@@ -33,7 +33,7 @@ from System import Enum
 
 # output = script.get_output()
 # output.add_style('body { color: blue; }')
-##############################################################################
+# ##############################################################################
 ### Variables
 
 IsIDScheckingPath = "C:\\temp\\revit\\IsIDSChecking.json"

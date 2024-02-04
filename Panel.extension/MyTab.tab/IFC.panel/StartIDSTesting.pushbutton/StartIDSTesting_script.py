@@ -35,7 +35,7 @@ else:
     isChecking['IsIDSChecking'] = True
     toggle_state()
     
-print(isChecking['IsIDSChecking'])
+# print(isChecking['IsIDSChecking'])
 
 
 IsIDSchecking = open(IsIDScheckingPath, "w")

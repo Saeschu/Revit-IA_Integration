@@ -3,5 +3,6 @@ layout:
   - ImportIDS 
   - SetNewIfcParameter
   - StartIDSTesting
+  - GetRequirements
   
   
