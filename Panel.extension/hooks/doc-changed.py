@@ -69,7 +69,7 @@ def checkRequirements(element, requ):
         except:
             print(f'Gefordertes Attribut "{requ.name}" ist nicht vorhanden')
             Revit_parameterValue = None
-            forSetUpnewParamter(Revit_parameterName, 'Rooms')
+            # forSetUpnewParamter(Revit_parameterName, 'Rooms')
 
         if Revit_parameterValue != None:
             if requ.get_usage() != 'prohibited':
@@ -88,7 +88,7 @@ def checkRequirements(element, requ):
         except:
             print(f'Gefordertes Attribut "Classification.Space.Number" ist nicht vorhanden')
             Revit_parameterValue = None
-            forSetUpnewParamter(Revit_parameterName, element.Category.Name)
+            # forSetUpnewParamter(Revit_parameterName, element.Category.Name)
 
         if Revit_parameterValue != None:
             checkRequirementValue(requ, Revit_parameterName, Revit_parameterValue)
@@ -118,6 +118,7 @@ def chekingParamters(specification):
 
 def forSetUpnewParamter(Parameter, BuiltInCategory):
     print('forSetUpnewParamter')
+    db['IDSArg']
     ParamterList = db['IDSArg']['NewParamter']
     ParamterList.append(Parameter)
 
@@ -149,7 +150,9 @@ if isChecking['IsIDSChecking'] == True:
             
             element= doc.GetElement(elementId)
             cat = element.Category.Name
-
+            print('## element.Category.Name')
+            print(cat)
+            print('##')
 
 
             if isChecking['IsIDSChecking'] == True:
@@ -162,20 +165,27 @@ if isChecking['IsIDSChecking'] == True:
 
                     #Ist die Category teil der Anforderung
                     for Entity in db['IfcCategoryMapping']:
-                        if str(cat) in db['IfcCategoryMapping'][Entity]:
+                                                
+                        if str(cat).upper() in db['IfcCategoryMapping'][Entity] and str(cat).upper() != 'SCHEDULES':
+                            print(f'## IfcCategoryMapping of {Entity}')
+                            print(db['IfcCategoryMapping'][Entity])
+                            print('##')
 
                             #ist der geänderte Paramter teil des IDS wird dies für die Prüfung geöffnet => kann dies ggf. während der laufzeit in der ram vorgehlten werden?
                             my_ids = ifctester.open(idsxml)
                             
                             #Specifications
                             for specification in my_ids.specifications:
-
+                                
                                 #Applicability 
                                 for appli in specification.applicability:
                                     
                                     if appli.__class__.__name__ == 'Entity':
-                                            if appli.name == Entity:
-                                                
+
+                                            appliName = appli.name
+
+                                            if str(appliName).upper() == str(Entity).upper():
+                                                print(f'{str(appliName).upper()} = {str(Entity).upper()}')
                                         
                                                 for requ in specification.requirements:
                                                     print(10*'-')
@@ -185,21 +195,21 @@ if isChecking['IsIDSChecking'] == True:
                                     elif appli.__class__.__name__ == 'Attribute':
                                         for parameter in element.Parameters:
                         
-                                            if parameter.Definition.Name == appli.name:
+                                            if str(parameter.Definition.Name).upper() == str(appli.name).upper():
                                                 
                                                 chekingParamters(specification)        
 
                                     elif appli.__class__.__name__ == 'Property':
                                         for parameter in element.Parameters:
                         
-                                            if parameter.Definition.Name == appli.name:
+                                            if str(parameter.Definition.Name).upper() == str(appli.name).upper:
                                                 
                                                 chekingParamters(specification)
                                         
                                     elif appli.__class__.__name__ == 'Classification':
                                         for parameter in element.Parameters:
                         
-                                            if parameter.Definition.Name == 'Classification.Space.Number':
+                                            if str(parameter.Definition.Name).upper() == str('Classification.Space.Number').upper():
                                                 
                                                 chekingParamters(specification)
 

@@ -111,7 +111,7 @@ with open(dbPath) as file:
 
 #Ist die Category teil der Anforderung
 for Entity in db['IfcCategoryMapping']:
-    if str(cat) in db['IfcCategoryMapping'][Entity]:
+    if str(cat).upper() in db['IfcCategoryMapping'][Entity]:
 
         my_ids = ifctester.open(idsxml)
         print(my_ids.info['title']) 
@@ -122,9 +122,11 @@ for Entity in db['IfcCategoryMapping']:
             #Applicability 
             for appli in specification.applicability:
                 
-                if appli.__class__.__name__ == 'Entity':      
+                if appli.__class__.__name__ == 'Entity':   
+
+                    appliName = appli.name   
                         
-                    if appli.name in db['IfcCategoryMapping'] and str(cat) in db['IfcCategoryMapping'][appli.name]:
+                    if str(appliName).upper() in db['IfcCategoryMapping'] and str(cat) in db['IfcCategoryMapping'][str(appliName).upper()]:
 
                         print('\n')
                         print(20*'-')
@@ -201,6 +203,6 @@ for parameter in element.Parameters:
         try:
             getbSDDRequest(Selected_Dictionary, Selected_Class)
         except:
-            print('Error occurs while bSDD request')
+            print(f'Error occurs while bSDD request, Selected_Dictionary: {Selected_Dictionary}, Selected_Class: {Selected_Class}')
 
 print('Ende')

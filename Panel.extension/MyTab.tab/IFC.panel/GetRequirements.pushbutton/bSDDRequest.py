@@ -90,4 +90,4 @@ def getbSDDRequest(Selected_Dictionary, Selected_Class):
     return 
     
 
-# getbSDDRequest("FM waveware Spital", "Büro")
+getbSDDRequest("FM waveware Spital", "Büro")

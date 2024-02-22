@@ -1,0 +1,6 @@
+C:\Python38\python.exe -m pip install ezdxf                
+C:\Python38\python.exe -m pip install ifcopenshell       
+C:\Python38\python.exe -m pip install ifctester          
+C:\Python38\python.exe -m pip install lark   
+C:\Python38\python.exe -m pip install xmlschema 
+C:\Python38\python.exe -m pip install requests                                                                   

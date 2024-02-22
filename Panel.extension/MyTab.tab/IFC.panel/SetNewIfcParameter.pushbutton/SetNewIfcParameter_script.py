@@ -112,16 +112,16 @@ dbPath = "C:\\TEMP\\revit\\db.json"
 with open(dbPath) as file:
     db = json.load(file)
 
-print("\n## IfcCategoryMapping")
-for i in db['IfcCategoryMapping']:
-    print(str(db['IfcCategoryMapping'][i]))
-print('##')
+# print("\n## IfcCategoryMapping")
+# for i in db['IfcCategoryMapping']:
+#     print(str(db['IfcCategoryMapping'][i]))
+# print('##')
 
 getBuiltInCategoryUserLabel = {}
 usedBuiltInCategory = []
 for cat in System.Enum.GetValues(DB.BuiltInCategory):
     try:
-        getBuiltInCategoryUserLabel[DB.LabelUtils.GetLabelFor(cat)] = cat
+        getBuiltInCategoryUserLabel[str(DB.LabelUtils.GetLabelFor(cat)).upper()] = cat
     except:
         pass   
 
@@ -143,22 +143,32 @@ tooltip ="Tag: IDS, Description: Parameter Creadet from IDS Requirement"
 # Start Transaction:
 t = Transaction(doc, "Add Parameters from IDS to Wall-elements")
 t.Start()
-                       
+
+print('## IDSArg Keys')
+print(db['IDSArg'].keys())
+print('##')
+
 for entity in db['IDSArg'].keys():
     #Return: IFCSPACE, IFCSPACETYPE
 
     # for entity in ids['IfcCategoryMapping']:
     #     #Return: "IfcCategoryMapping": {"IFCSPACE": ["Rooms", "Rooms", "Rooms", "Rooms"]}}
-
+        print('## IfcCategoryMapping Keys')
         print(db['IfcCategoryMapping'].keys())
-        if entity in db['IfcCategoryMapping'].keys():
+        print('##')
+
+        if str(entity).upper() in db['IfcCategoryMapping'].keys():
+            print('## Entity to Creat a Parameter in')
             print(entity)
+
             for category in db['IfcCategoryMapping'][entity]:
+                print('\n## Matching Category to Entity to Creat a Parameter in')
                 print(category)
+
                 if category in getBuiltInCategoryUserLabel:
                     builtinCategory = getBuiltInCategoryUserLabel[category]
             
-                    print(str('##Setting Parameter for Category'))
+                    print(str('##Setting Parameter for Category : ') + str(builtinCategory))
 
                     parameter_name = db['IDSArg'][entity]
                     print(parameter_name)
@@ -175,10 +185,14 @@ for entity in db['IDSArg'].keys():
                                             'parameterName' : str(paramter),
                                             'spFileName' : str(spFile.Filename),
                                             }
+                            print(parameterDic)
                             db['ParamArg'].update({str(paramter): parameterDic})
 
                         except:
                             pass
+
+                else:
+                    print()
 # print(parameterDic)
 
 # End Transaction:
