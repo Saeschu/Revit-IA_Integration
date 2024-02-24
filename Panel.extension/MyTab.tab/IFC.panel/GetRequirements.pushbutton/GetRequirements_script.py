@@ -2,7 +2,7 @@
 
 #############################################################################
 import json
-from bSDDRequest import getbSDDRequest
+from lib.bSDDRequest import getbSDDRequest
 import ifctester
 
 from pyrevit import EXEC_PARAMS, DB

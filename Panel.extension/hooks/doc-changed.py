@@ -37,22 +37,24 @@ def checkRequirementValue(requ, Revit_parameter, Revit_parameterValue):
             if requ.value == Revit_parameterValue: 
                 pass
             else:
-                print(f'WARNING : {Revit_parameter}  :  {Revit_parameterValue}  nicht erlaubter wert')
+                print(f'WARNING : {Revit_parameter}  :  "{Revit_parameterValue}"  nicht erlaubter wert')
+                print(f'Erlaubter Wertebereich : "{requ.value}"')
 
         elif 'pattern' in requ.value.options:
             pattern = requ.value.options['pattern']
             if re.match(pattern, Revit_parameterValue):
                 pass
             else:
-                print(f'WARNING :  {Revit_parameter}  :  {Revit_parameterValue}   nicht erlaubter Werteausdruck')
-                print(f'Erlaubter Wertebereich : {requ.value}')
+                print(f'WARNING :  {Revit_parameter}  :  "{Revit_parameterValue}"   nicht erlaubter Werteausdruck')
+                print(f'Erlaubter Wertebereich : "{requ.value}"')
 
         elif 'enumeration' in requ.value.options:
-            if Revit_parameterValue in requ.value.options['enumeration']:
+            ValueList = requ.value.options['enumeration']
+            if Revit_parameterValue in ValueList:
                 pass
             else:
-                print(f'WARNING :  {Revit_parameter}  :  {Revit_parameterValue}   nicht erlaubter Listenwert')
-                print(f'Erlaubte Werteliste : {requ.value}')
+                print(f'WARNING :  {Revit_parameter}  :  "{Revit_parameterValue}"   nicht erlaubter Listenwert')
+                print(f'Erlaubte Werteliste : {ValueList}')
     
     else:
         pass
@@ -63,8 +65,27 @@ def checkRequirements(element, requ):
     if requ.__class__.__name__ == "Attribute" or requ.__class__.__name__ == "Property":
         
         try:
+            Revit_parameter = element.LookupParameter(f'Ifc{requ.name}')
+            Revit_parameterName = f'Ifc{requ.name}' #Revit_parameter.Name
+            Revit_parameterValue = Revit_parameter.AsValueString()
+        except:
+            print(f'Gefordertes Attribut "{requ.name}" ist nicht vorhanden')
+            Revit_parameterValue = None
+            # forSetUpnewParamter(Revit_parameterName, 'Rooms')
+
+        if Revit_parameterValue != None:
+            if requ.get_usage() != 'prohibited':
+                checkRequirementValue(requ, Revit_parameterName, Revit_parameterValue)
+            else:
+                print(f'WARNING : {Revit_parameterName} : Attributwerte darf nicht vorhanden sein')
+
+        elif requ.get_usage() == 'required':
+            print(f'WARNING : {Revit_parameterName} : Attributwerte muss vorhanden sein')
+    
+    elif requ.__class__.__name__ == "Property":
+        try:
             Revit_parameter = element.LookupParameter(requ.name)
-            Revit_parameterName = requ.name #Revit_parameter.Name
+            Revit_parameterName = requ.name
             Revit_parameterValue = Revit_parameter.AsValueString()
         except:
             print(f'Gefordertes Attribut "{requ.name}" ist nicht vorhanden')
@@ -195,7 +216,7 @@ if isChecking['IsIDSChecking'] == True:
                                     elif appli.__class__.__name__ == 'Attribute':
                                         for parameter in element.Parameters:
                         
-                                            if str(parameter.Definition.Name).upper() == str(appli.name).upper():
+                                            if str(parameter.Definition.Name).upper() == str(f'Ifc{appli.name}').upper():
                                                 
                                                 chekingParamters(specification)        
 

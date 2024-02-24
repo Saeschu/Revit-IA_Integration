@@ -1,4 +1,4 @@
-def get_RevitElementFromIFCmapping(Entitylist, IfcCategoryMappingFile):
+def getRevitElementFromIFCmapping(Entitylist, IfcCategoryMappingFile):
     mappingDict = {}
     CategoryList =[]
 
@@ -9,13 +9,10 @@ def get_RevitElementFromIFCmapping(Entitylist, IfcCategoryMappingFile):
             if item[2].upper() in Entitylist:
                 # if item[0] not in CategoryList:
                 if item[1] == '':
-                    CategoryList.append(str(item[0]))
+                    CategoryList.append(str(item[0]).upper())
                 else:
-                    CategoryList.append(str(item[0] + '\t' + item[1]))
+                    CategoryList.append(str(item[0] + '\t' + item[1]).upper())
 
-                mappingDict[item[2].upper()] = CategoryList
-
-    print("\n##Revit Categry mappingDict: ")
-    print(mappingDict)
-    print("####")
+                mappingDict[str(item[2]).upper()] = CategoryList
+                
     return mappingDict
