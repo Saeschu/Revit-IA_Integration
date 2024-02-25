@@ -5,21 +5,18 @@ print('\n### SATART of CODE ImportIDS ###')
 ##############################################################################
 
 # Import necesseray libraris
+import ifcopenshell
 import ifctester
 import json
-import sys
 import csv
 
 #My Moduls
-sys.path.append('./Panel.extension/lib')
-# from mymodule import get_RevitElementFromIFCmapping
-
 from lib.SetUpPropertySetDefinition import SetUpIDSPropertySetDefinition
-from lib.getRevitElementFromIFCmapping import getRevitElementFromIFCmapping
 
-##############################################################################
-
-
+# Application Members
+doc = __revit__.ActiveUIDocument.Document
+uidoc = __revit__.ActiveUIDocument
+app = __revit__.Application
 ##############################################################################
 #handeling db
 IDSName = 'IDS'
@@ -45,12 +42,12 @@ dbJsonObject = open(dbJsonFile, "w")
 inputPath = input("enter Path to IDS: ")
 print(inputPath)
 
-if len(inputPath) == 0:
-    idsPath = SampleIdsPath
-else:
-    idsPath = inputPath
+# if inputPath == "sample":
+#     idsPath = SampleIdsPath
+# else:
+#     idsPath = inputPath
 
-
+idsPath = SampleIdsPath
 my_ids = ifctester.open(idsPath)
 print(f'{my_ids.info["title"]} has been loaded')
 
@@ -59,10 +56,13 @@ print(f'{my_ids.info["title"]} has been loaded')
 IfcCategoryMappingFile = open(RevitIfcMappingFile, 'r', encoding= 'utf-16')
 
 # Creat dataframe for IDSPropertySetDefined in Revit
-RevitParameterMappingDataFrame = list( csv.reader(open(f'{IDSPropertySetDefinedFolderPath}\\{IDSPropertySetDefinedFileName}.txt', 'r', newline=''), delimiter='\t')  )
-
+try:
+    RevitParameterMappingDataFrame = list( csv.reader(open(f'{IDSPropertySetDefinedFolderPath}\\{IDSPropertySetDefinedFileName}.txt', 'r', newline=''), delimiter='\t')  )
+except:
+    RevitParameterMappingDataFrame = []
+    
 ##############################################################################
-EntityList = []
+# EntityList = []
 dbDataFrame = {'IDSArg': {}}
 ParameterListe = []
 
@@ -71,31 +71,44 @@ ParameterListe = []
 ##__MAIN__##
 for specification in my_ids.specifications:
     for appli in specification.applicability:
-        ParamterList = []
-        if appli.__class__.__name__ == "Entity": 
-            EntityList.append(str(appli.name).upper())
 
+        if appli.__class__.__name__ == "Entity": 
+
+            try:
+               ParamterList = dbDataFrame['IDSArg'][str(appli.name).upper()]
+            except:
+                dbDataFrame['IDSArg'].update({str(appli.name).upper() : []})
+                ParamterList = dbDataFrame['IDSArg'][str(appli.name).upper()]
+            
             for requ in specification.requirements:
                 
                 if requ.__class__.__name__ == "Attribute":
-                    ParamterList.append(f'Ifc{requ.name}')
+                    
                     requ.minOccurs = None
                     requ.maxOccurs = None
 
+                    ParamterList.append(f'Ifc{requ.name}')
+                    dbDataFrame['IDSArg'].update({str(appli.name).upper() : ParamterList})
+
                 elif requ.__class__.__name__ == "Property":
-                    ParamterList.append(requ.name)
+
                     RevitParameterMappingDataFrame = SetUpIDSPropertySetDefinition(RevitParameterMappingDataFrame, appli.name, requ)
                     
-                dbDataFrame['IDSArg'].update({str(appli.name).upper() : ParamterList})
+
+                elif requ.__class__.__name__ == "Classification":
+                    print('Requirement is at Facet Classification, Importing ist in Procress')
 
 
+                elif requ.__class__.__name__ == "Parts":
+                    print('Requirement is at Facet Parts, Importing ist in Procress')
 
 
-
+                elif requ.__class__.__name__ == "Material":
+                    print('Requirement is at Facet Parts, Importing ist in Procress')
+                                  
+                
 ##############################################################################
 
-dbDataFrame['IDSArg'].update({'NewParamter' : ParamterList})
-dbDataFrame["IfcCategoryMapping"] = getRevitElementFromIFCmapping(EntityList, IfcCategoryMappingFile)
 jsonString = json.dumps(dbDataFrame)
 dbJsonObject.write(jsonString)
 dbJsonObject.close()
@@ -107,12 +120,11 @@ my_ids.to_xml(IdsXmlFile)
 
 ############################################################################
 
-print("\n##Revit Categry mappingDict: ")
-print(dbDataFrame["IfcCategoryMapping"])
+print("\n##Attributzuordnung zu IfcEntitäten: ")
+print(dbDataFrame)
+print("\n##Revit PropertySet Definition und zuordnung zu IfcEntitäten: ")
+for line in RevitParameterMappingDataFrame:
+    print(line)
 print("####")
 ### ENDE of CODE ###
 print('\n### ENDE of CODE ###')
-
-
-
-

@@ -49,13 +49,13 @@ def SetUpIDSPropertySetDefinition(RevitParameterMappingDataFrame, Entity, requ):
         pass
 
     elif definition.PropertySetName not in PropertySetList.keys() and definition.PropertyName not in PropertyList.keys():
-        print('Status 1: beides neu anlegen')
+        # print('Status 1: beides neu anlegen')
         RevitParameterMappingDataFrame.append(definition.SetPropertySet())
         RevitParameterMappingDataFrame.append(definition.SetProperty())
         
 
     elif definition.PropertySetName in PropertySetList.keys() and definition.PropertyName not in PropertyList.keys():
-        print('Status2: Property an bestehendes Pset anlegen')
+        # print('Status2: Property an bestehendes Pset anlegen')
         RevitParameterMappingDataFrame.insert(PropertySetList[definition.PropertySetName] , definition.SetProperty())
 
         if definition.Entity not in EntityListFromPropertySet[definition.PropertySetName]:
@@ -65,7 +65,7 @@ def SetUpIDSPropertySetDefinition(RevitParameterMappingDataFrame, Entity, requ):
 
 
     elif definition.PropertySetName not in PropertySetList.keys() and definition.PropertyName in PropertyList.keys():
-        print('Property ist bereits in einem PSet gespeichert')
+        # print('Property ist bereits in einem PSet gespeichert')
         pass
 
     

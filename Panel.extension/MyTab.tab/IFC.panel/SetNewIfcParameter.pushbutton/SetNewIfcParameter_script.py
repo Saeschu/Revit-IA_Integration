@@ -119,12 +119,14 @@ with open(dbPath) as file:
 
 getBuiltInCategoryUserLabel = {}
 usedBuiltInCategory = []
+print('\n##System.Enum.GetValues(DB.BuiltInCategory)')
 for cat in System.Enum.GetValues(DB.BuiltInCategory):
+    print(cat)
     try:
         getBuiltInCategoryUserLabel[str(DB.LabelUtils.GetLabelFor(cat)).upper()] = cat
     except:
         pass   
-
+print('\n##S')
 # parameterlistFromIDS = ['IfcGUID', 'IfcName', 'IfcDescription','IFC Predefined Typ', 'IfcObjectType']
 # parameterlistFromIDS = ["IFC Predefined Typ", "IfcName", "Neuer Parameter"]
 #TEMP#
