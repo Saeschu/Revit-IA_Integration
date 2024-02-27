@@ -9,7 +9,7 @@ class IDSPropertySetDefinition():
         self.PropertySetName = requ.propertySet
         self.PropertyName = requ.name
         self.PropertyDataType = 'Text'
-        self.RevitParameterName = 'temp'
+        self.RevitParameterName = ''
 
 
     def SetTyping(self):

@@ -5,8 +5,8 @@ def getRevitCategoryFromIFCmapping(IfcEntity, IfcCategoryMappingFile):
 
         if row.startswith('#') != True:
             item = row.split('\t')
-            print(str(IfcEntity).upper())
-            print(str(item[2]).upper())
+            # print(str(IfcEntity).upper())
+            # print(str(item[2]).upper())
             if str(item[2]).upper().encode('utf-8') == str(IfcEntity).upper().encode('utf-8'):
                 print(item[2])
                 # if item[0] not in CategoryList:

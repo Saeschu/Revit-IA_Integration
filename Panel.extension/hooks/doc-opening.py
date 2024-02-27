@@ -13,8 +13,9 @@ with open(IsIDScheckingPath) as IsIDSchecking:
 
     isChecking['IsIDSChecking'] = False
 
-jsonString = json.dumps(isChecking)
+    jsonString = json.dumps(isChecking)
 
-IsIDSchecking.write(jsonString)
+    IsIDSchecking.write(jsonString)
+    
 IsIDSchecking.close() 
 

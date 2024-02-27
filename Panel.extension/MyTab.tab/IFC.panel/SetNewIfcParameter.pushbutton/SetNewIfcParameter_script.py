@@ -21,110 +21,115 @@ app = __revit__.Application
 
 
 ##############################################################################
+class CreatRevitParameter:
+    def __init__(self):
+        self.Apfel = 'Apfel'
 
-def set_new_parameter_to_Category(app, doc, spFile, RevitCatecory, paramterGroupName, parameter_name, paramter_DataType, tooltip, my_categories):
-    
+def GetBuiltInCatecory(RevitCatecoryName):
+    # Create a category set and insert the category into it
+    # my_categories = app.Create.NewCategorySet()
+
     for builtinCategory in System.Enum.GetValues(DB.BuiltInCategory):
         
         try: 
             
-            if str(DB.LabelUtils.GetLabelFor(builtinCategory)).upper().encode('utf-8') == str(RevitCatecory).upper().encode('utf-8'):
+            if str(DB.LabelUtils.GetLabelFor(builtinCategory)).upper().encode('utf-8') == str(RevitCatecoryName).upper().encode('utf-8'):
 
-                print( str('\nAnlegen von : : ') + str(DB.LabelUtils.GetLabelFor(builtinCategory)) + str (builtinCategory) + ' \t ' +  str(RevitCatecory) + '\t ' + str(parameter_name) )
-                
-                # Use BuiltInCategory to get the category 
-                my_category = Category.GetCategory(doc, builtinCategory) 
-                my_categories.Insert(my_category)
+                print( str('\nAnlegen von : : ') + str(RevitCatecoryName) + '\t ' + str (builtinCategory))
                 
                 break
-        except:
-            instance_bind_ok = False
-            builtinCategory = None
-            
+        except:          
             pass
-        
 
-    if builtinCategory != None:
+    return builtinCategory
 
-        # Get the BindingMap of the current document
-        binding_map = doc.ParameterBindings
-        print('bindung_map : ', binding_map)
-        # # Create a category set and insert the category into it
-        # my_categories = app.Create.NewCategorySet()
 
-        
+def ParamterBindungToBuiltInCategory(app, doc, spFile, builtinCategory, paramterGroupName, parameter_name, paramter_DataType, tooltip):
+    
+    # Get the BindingMap of the current document
+    binding_map = doc.ParameterBindings
+    print(str("bindung_map : ") +  str(binding_map))
 
-        #Check if a ParameterBindung of paramter_name already Exist
-        iterator = binding_map.ForwardIterator()
-        ExistParamterBindung = False
-        while (iterator.MoveNext()):
+    #### Temp, danach loeschen
+    # Create a category set and insert the category into it
+    my_categories = app.Create.NewCategorySet()
 
+    # Use BuiltInCategory to get the category 
+    my_category = Category.GetCategory(doc, builtinCategory) 
+    my_categories.Insert(my_category)
+    ####
+
+
+    #Check if a ParameterBindung of paramter_name already Exist
+    iterator = binding_map.ForwardIterator()
+    ExistParamterBindung = False
+
+    while (iterator.MoveNext()):
+        for category in my_categories:
             if iterator.Key.Name == parameter_name:
 
                 CategorySet = iterator.Current.Categories
-                ExistParamterBindung = CategorySet.Contains(my_category)
+                ExistParamterBindung = CategorySet.Contains(category)
 
-        print('ExistParamterBindung ', parameter_name, ExistParamterBindung)
-        
-        if ExistParamterBindung == False:
-            print(" Paramter will be added to Category ", my_category.Name, my_category)
+                print(str("ExistParamterBindung ") +  str(parameter_name) + ' ' + str(ExistParamterBindung))
+                instance_bind_ok = 'bereits vorhanden'
+                    
 
-        
-            # Create a new group in the shared parameters file if not allready exist
-            my_groups = spFile.Groups
-        
-            all_groups = {}
-            for group in my_groups:
-                all_groups[group.Name] = group
+    if ExistParamterBindung == False:
+        print(str(" Paramter will be added to Category ") +  str(my_categories))
+  
+        # Create a new group in the shared parameters file if not allready exist
+        my_groups = spFile.Groups
+    
+        all_groups = {}
+        for group in my_groups:
+            all_groups[group.Name] = group
+
+        if paramterGroupName not in all_groups:
+            my_group = my_groups.Create(paramterGroupName)
+            print(str("     Group created:  ") + str(my_group.Name))
+
+        else:
+            my_group = all_groups[paramterGroupName]
+            print(str("     Group alread exist: ") +  str(my_group.Name))      
 
 
-            if paramterGroupName not in all_groups:
-                my_group = my_groups.Create(paramterGroupName)
-                print("     Group created:  ", my_group.Name)
+        # Create an instance definition of the Parameter in definition group MyParameters
 
-            else:
-                my_group = all_groups[paramterGroupName]
-                print("     Group alread exist: ", my_group.Name)      
+        all_paramters = {}
+        for parameter in my_group.Definitions:
+            all_paramters[parameter.Name] = parameter
 
+        if parameter_name  not in all_paramters:
 
-            # Create an instance definition of the Parameter in definition group MyParameters
-
-            all_paramters ={}
-            for parameter in my_group.Definitions:
-                all_paramters[parameter.Name] = parameter
-
-            if parameter_name  not in all_paramters:
-
-                option = ExternalDefinitionCreationOptions(parameter_name, paramter_DataType)
-                
-                # Set tooltip
-                option.Description = tooltip
+            option = ExternalDefinitionCreationOptions(parameter_name, paramter_DataType)
             
-                my_definition_product_date = my_group.Definitions.Create(option)
-                print("     Parameter created:  ", parameter_name)
-
-
-            else:
-                my_definition_product_date = all_paramters[parameter_name]
-                print("     Parameter allready exist:   ", parameter_name)
-
-
-
-            # Create an instance of InstanceBinding for the Parameter
-            instance_binding = app.Create.NewInstanceBinding(my_categories)
+            # Set tooltip
+            option.Description = tooltip
+            my_definition_product_date = my_group.Definitions.Create(option)
             
-            print("     instance_binding Created:   ", instance_binding)
+            print(str("     Parameter created:  ") +  str(parameter_name))
 
-            for binding in instance_binding.Categories:
-                print(str('\t') + str(binding.Name))
-        
-            # Bind the definitions to the document
-            instance_bind_ok = binding_map.Insert(my_definition_product_date,
-                                                instance_binding, BuiltInParameterGroup.PG_IFC)
+
+        else:
+
+            my_definition_product_date = all_paramters[parameter_name]
             
+            print(str("\tParameter allready exist:  ") + str(my_definition_product_date) + ' ' + str(all_paramters[parameter_name]))
+
+            print(str("\tExist Parameter bindung : ") +  str(binding_map.Contains(my_definition_product_date) ))
+
+        # Create an instance of InstanceBinding for the Parameter
+        instance_binding = app.Create.NewInstanceBinding(my_categories)
+        print(str("\tinstance_binding Created: ")  + str(instance_binding))
+
+        # Bind the definitions to the document
+        instance_bind_ok = binding_map.Insert(my_definition_product_date,
+                                            instance_binding, BuiltInParameterGroup.PG_IFC)
         
-            print("     instance_bind_ok binded to the document:   ", instance_bind_ok)
-        
+    
+        print(str("\tinstance_bind_ok binded to the document: ") + ' ' + str( instance_bind_ok) +  '( ' + str( my_category.Name ) + ' : ' + str(my_definition_product_date.Name) +  ' )' )
+    
 
     return instance_bind_ok
 
@@ -158,7 +163,7 @@ RevitParameterMappingDataFrame = list( csv.reader(open(str(IDSPropertySetDefined
 ####
 ##Spezifikationen zum Anlegen der Revit Parameter
 spFile   = app.OpenSharedParameterFile()
-paramterGroupName = "IR-FM_fromIDS"
+paramterGroupName = str("IR-FM_fromIDS_") + str(IDSName)
 paramter_DataType = SpecTypeId.String.Text
 tooltip ="Tag: IDS, Description: Parameter Creadet from IDS Requirement"
 ####
@@ -183,19 +188,14 @@ for entity in dbDataFrame['IDSArg'].keys():
         IfcEentity = entity.upper().encode('utf-8')
         RevitCatecories = dbDataFrame['IfcMapping'][entity.upper().encode('utf-8')]
 
-        # print(str('\n') + str(IfcEentity) + ' : ' + str(RevitCatecories))
-
         for attribut in dbDataFrame['IDSArg'][entity]:
             RevitParamter = attribut
-            
-            # Create a category set and insert the category into it
-            my_categories = app.Create.NewCategorySet()
-            # print(str('\t') + str(attribut) + ' : ' + str(RevitParamter) )
 
-            for RevitCatecory in RevitCatecories:
-                if str(RevitCatecory).upper() != 'KEIN PASSENDE REVIT CATEGORY GEFUNDEN':
-                    # print(str('\n') + str(RevitCatecory))
-                    set_new_parameter_to_Category(app, doc, spFile, RevitCatecory, paramterGroupName, RevitParamter, paramter_DataType, tooltip, my_categories)
+            for RevitCatecoryName in RevitCatecories:
+                if len(RevitCatecoryName.split('\t')) == 1:
+                    print(str('\n') + str(RevitCatecoryName))
+                    builtInCategory = GetBuiltInCatecory(RevitCatecoryName)
+                    # ParamterBindungToBuiltInCategory(app, doc, spFile, builtInCategory, paramterGroupName, RevitParamter, paramter_DataType, tooltip)
                 
 
 
@@ -206,30 +206,29 @@ for line in RevitParameterMappingDataFrame:
     if line[0] == 'PropertySet:':
 
         for entity in line[3].split(','):
+            print(entity)
             if entity.upper().encode('utf-8') in dbDataFrame['IfcMapping']:
                 IfcEentity = entity.upper().encode('utf-8')
-                RevitCatecories = dbDataFrame['IfcMapping'][entity.upper().encode('utf-8')]
+                RevitCatecories = ['Rooms', 'Spaces'] #dbDataFrame['IfcMapping'][IfcEentity]
+                print(RevitCatecories)
                 IfcPropertySet = line[1]
-
-                # Create a category set and insert the category into it
-                my_categories = app.Create.NewCategorySet()
-
-                # print(str('\n') + str(IfcEentity) + ' : ' + str(RevitCatecories))
-                # print(str('\n') + str(IfcPropertySet) )
 
                 for subline in RevitParameterMappingDataFrame[pos + 1:]:
 
                     if subline[0] =='':
-                        IfcProperty = subline[1]
-                        RevitParamter = subline[3]
-                        # print(str('\t') + str(IfcProperty) + ' : ' + str(RevitParamter) )
+                        IfcProperty = str(subline[1]).encode('utf-8')
 
-                        for RevitCatecory in RevitCatecories:
-                            if str(RevitCatecory).upper()  != 'KEIN PASSENDE REVIT CATEGORY GEFUNDEN':
-                                # print(str('\n') + str(RevitCatecory))
-                                set_new_parameter_to_Category(app, doc, spFile, RevitCatecory, paramterGroupName, RevitParamter, paramter_DataType, tooltip, my_categories)
+                        if subline[3] != '':
+                            RevitParamter = str(subline[3]).encode('utf-8')
+                        else:
+                            RevitParamter = str(subline[1]).encode('utf-8')
 
-
+ 
+                        for RevitCatecoryName in RevitCatecories:
+                            if len(RevitCatecoryName.split('\t')) == 1:
+                                print(str('\n') + str(RevitCatecoryName) + ' :  ' + str(RevitParamter))
+                                builtInCategory = GetBuiltInCatecory(RevitCatecoryName)
+                                ParamterBindungToBuiltInCategory(app, doc, spFile, builtInCategory, paramterGroupName, RevitParamter, paramter_DataType, tooltip)
 
                     else:
                         break
@@ -237,7 +236,6 @@ for line in RevitParameterMappingDataFrame:
 
     pos = pos + 1
                    
-
 # End Transaction:
 t.Commit()
 
