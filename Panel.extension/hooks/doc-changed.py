@@ -9,8 +9,8 @@ import json
 import sys
 import sys
 
-sys.path.append( '/Pnale.extenstion/lib')
-from mymodule import get_RevitElementFromIFCmapping
+# sys.path.append( '/Pnale.extenstion/lib')
+# from mymodule import get_RevitElementFromIFCmapping
 
 from pyrevit import EXEC_PARAMS, DB
 from Autodesk.Revit.DB import *

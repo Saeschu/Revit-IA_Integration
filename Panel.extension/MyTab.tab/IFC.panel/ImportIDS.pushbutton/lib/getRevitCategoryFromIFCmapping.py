@@ -1,22 +1,24 @@
 def getRevitCategoryFromIFCmapping(IfcEntity, IfcCategoryMappingFile):
+    RevitCategoryList = []
     
-    RevitCategory = 'kein passende Revit Category gefunden'
     for row in IfcCategoryMappingFile:
+
         if row.startswith('#') != True:
             item = row.split('\t')
-
-            if str(item[2]).upper() == str(IfcEntity).upper():
+            print(str(IfcEntity).upper())
+            print(str(item[2]).upper())
+            if str(item[2]).upper().encode('utf-8') == str(IfcEntity).upper().encode('utf-8'):
+                print(item[2])
                 # if item[0] not in CategoryList:
                 if item[1] == '':
                     RevitCategory = str(item[0])
-                    break
-                    
+
                 else:
                     RevitCategory = str(item[0] + '\t' + item[1])
-                    break
+                    
                 
+                RevitCategoryList.append(RevitCategory)
             # else:
             #     RevitCategory = 'kein passende Revit Category gefunden'   
 
-
-    return RevitCategory
+    return RevitCategoryList

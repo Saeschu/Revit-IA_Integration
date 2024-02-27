@@ -7,11 +7,13 @@ print('\n### SATART of CODE ImportIDS ###')
 # Import necesseray libraris
 import ifcopenshell
 import ifctester
+
 import json
 import csv
 
 #My Moduls
 from lib.SetUpPropertySetDefinition import SetUpIDSPropertySetDefinition
+from lib.getRevitCategoryFromIFCmapping import getRevitCategoryFromIFCmapping
 
 # Application Members
 doc = __revit__.ActiveUIDocument.Document
@@ -25,11 +27,10 @@ ProjectFilePath = 'C:\\temp\\revit'
 dbJsonFile = f'{ProjectFilePath}\\db.json'
 IdsXmlFile = f'{ProjectFilePath}\\{IDSName}.xml'
 
-RevitIfcMappingFile = "C:\ProgramData\Autodesk\RVT 2024\Test_Msc_23-12-26_exportlayers-ifc-IAI.txt"
-
 IDSPropertySetDefinedFolderPath = "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\IFC 2021.bundle\\Contents\\2021"
 IDSPropertySetDefinedFileName = f'IDSPropertySetDefined_{IDSName}'
 
+RevitIfcMappingFile = "C:\ProgramData\Autodesk\RVT 2024\Test_Msc_23-12-26_exportlayers-ifc-IAI.txt"
 
 #Sample for Testing
 SampleIdsPath = f'C:\\Users\\Sascha Hostettler\\OneDrive - FHNW\\FHNW_Msc_VDC\\_MSc_Thesis_IDS\\04_Data\\SampleData\\PoC-Sampels\\{IDSName}.xml'
@@ -49,11 +50,11 @@ print(inputPath)
 
 idsPath = SampleIdsPath
 my_ids = ifctester.open(idsPath)
-print(f'{my_ids.info["title"]} has been loaded')
+print(f'{my_ids.info["title"]} has been loaded\n')
 
 
 #open RevitIfcMappingFile
-IfcCategoryMappingFile = open(RevitIfcMappingFile, 'r', encoding= 'utf-16')
+IfcCategoryMappingFile = open(RevitIfcMappingFile, 'r', encoding="utf-16")
 
 # Creat dataframe for IDSPropertySetDefined in Revit
 try:
@@ -62,8 +63,8 @@ except:
     RevitParameterMappingDataFrame = []
     
 ##############################################################################
-# EntityList = []
-dbDataFrame = {'IDSArg': {}}
+
+dbDataFrame = {'IDSArg': {}, 'IfcMapping' : {}}
 ParameterListe = []
 
 ##############################################################################
@@ -73,7 +74,11 @@ for specification in my_ids.specifications:
     for appli in specification.applicability:
 
         if appli.__class__.__name__ == "Entity": 
+            # print(appli.name)
+            # print(getRevitCategoryFromIFCmapping(appli.name, IfcCategoryMappingFile))
 
+            dbDataFrame['IfcMapping'].update({str(appli.name).upper() : getRevitCategoryFromIFCmapping(appli.name, IfcCategoryMappingFile)})
+            
             try:
                ParamterList = dbDataFrame['IDSArg'][str(appli.name).upper()]
             except:
