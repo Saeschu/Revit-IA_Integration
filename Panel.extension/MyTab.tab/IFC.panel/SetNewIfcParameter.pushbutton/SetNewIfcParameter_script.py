@@ -19,11 +19,40 @@ doc = __revit__.ActiveUIDocument.Document
 uidoc = __revit__.ActiveUIDocument
 app = __revit__.Application
 
-
+output = script.get_output()
 ##############################################################################
 class CreatRevitParameter:
     def __init__(self):
         self.Apfel = 'Apfel'
+
+def CreatMapping(RevitParameterMappingDataFrame):
+    def showMapping(RevitParameterMappingDataFrame):
+        DataSet = []
+
+        for line in RevitParameterMappingDataFrame:
+            if line[0] == 'PropertySet:':
+
+                for subline in RevitParameterMappingDataFrame:
+                    DataSet.append([line[1], subline[1], subline[3]])
+
+        output.print_table(table_data=DataSet,
+                    title="Property Mapping Table",
+                    columns=["IfcPropertySet", "IfcPropertyName", "RevitParamterName"],
+                    formats=['', '', '{}'])
+
+    showMapping(RevitParameterMappingDataFrame)
+    InputMapping = 'None'
+    while InputMapping.upper() != 'SAVE':
+        for line in RevitParameterMappingDataFrame:
+            if str(line[1]).upper() == InputMapping.split(' ')[0].upper():
+                line[3] = InputMapping.split(' ')[1]
+                showMapping(RevitParameterMappingDataFrame)
+                break  
+
+        InputMapping = raw_input('Mapping: <IfcProperty> <newRevitParameterName> (um zu Stoppen "SAVE" eingeben)')
+
+    return RevitParameterMappingDataFrame
+
 
 def GetBuiltInCatecory(RevitCatecoryName):
     # Create a category set and insert the category into it
@@ -35,7 +64,7 @@ def GetBuiltInCatecory(RevitCatecoryName):
             
             if str(DB.LabelUtils.GetLabelFor(builtinCategory)).upper().encode('utf-8') == str(RevitCatecoryName).upper().encode('utf-8'):
 
-                print( str('\nAnlegen von : : ') + str(RevitCatecoryName) + '\t ' + str (builtinCategory))
+                print( str('\nAnlegen von : ') + str(RevitCatecoryName) + '\t ' + str (builtinCategory))
                 
                 break
         except:          
@@ -171,8 +200,10 @@ tooltip ="Tag: IDS, Description: Parameter Creadet from IDS Requirement"
 
 ##############################################################################
 
-##__MAIN__##
+CreatMapping(RevitParameterMappingDataFrame)
 
+##__MAIN__##
+print()
 # Start Transaction:
 t = Transaction(doc, "Add Parameters from IDS to Wall-elements")
 t.Start()
@@ -245,6 +276,9 @@ t.Commit()
 # dbJsonObject.write(jsonString)
 dbJsonObject.close()
 
+
+csv_writer = csv.writer(open(str(IDSPropertySetDefinedFolderPath) + str('\\') + str(IDSPropertySetDefinedFileName) + '.txt', 'w'), delimiter='\t', quoting=csv.QUOTE_MINIMAL)
+csv_writer.writerows(RevitParameterMappingDataFrame)
 ##############################################################################
 
 ### ENDE of CODE ###
