@@ -14,7 +14,7 @@ uidoc = __revit__.ActiveUIDocument
 doc = __revit__.ActiveUIDocument.Document
 app = __revit__.Application
 spFile   = app.OpenSharedParameterFile()
-IDSName = input('eingabe IDS name der zu löschenden Parameter : ')
+# IDSName = input('eingabe IDS name der zu loeschenden Parameter : ')
 IDSName = 'IDS'
 paramterGroupName = str("IR-FM_fromIDS_") + str(IDSName)
 

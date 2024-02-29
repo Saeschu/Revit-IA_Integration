@@ -8,6 +8,7 @@ import re
 import json
 import sys
 import sys
+import csv
 
 # sys.path.append( '/Pnale.extenstion/lib')
 # from mymodule import get_RevitElementFromIFCmapping
@@ -18,110 +19,154 @@ import System
 from System import Enum
 ##############################################################################
 ### Variables
+IDSName = "IDS"
 
 IsIDScheckingPath = "C:\\temp\\revit\\IsIDSChecking.json"
 idsxml = "C:\\temp\\revit\\ids.xml"
 dbPath = "C:\\temp\\revit\\db.json"
 
+IDSPropertySetDefinedFolderPath = "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\IFC 2021.bundle\\Contents\\2021"
+IDSPropertySetDefinedFileName = str('IDSPropertySetDefined_') + str(IDSName)
+
+
 with open(IsIDScheckingPath) as IsIDSchecking:
     isChecking = json.load(IsIDSchecking)
 
+
+RevitParameterMappingDataFrame = list( csv.reader(open(str(IDSPropertySetDefinedFolderPath) + str('\\') + str(IDSPropertySetDefinedFileName) + str('.txt'), 'r'), delimiter='\t')  )
+
 ##############################################################################
+def getIfcPropertyName(RevitParameterName, RevitParameterMappingDataFrame):
+
+    for line in RevitParameterMappingDataFrame:
+        IfcName = line[1]
+        RevitName = line[3]
+
+        if RevitName != '' and RevitName == RevitParameterName:
+            # print('getIfcPropertyName ', RevitParameterName, ' -> ', MappedIfcPropertyName)
+            return IfcName    
+        
+        elif RevitName == '' and IfcName == RevitParameterName:
+            # print('getIfcPropertyName ', RevitParameterName, ' -> ', MappedIfcPropertyName)
+            return IfcName
+
+def getRevitParameterName(IfcPropertyName, RevitParameterMappingDataFrame):
+
+    for line in RevitParameterMappingDataFrame:
+        IfcName = line[1]
+        RevitName = line[3]
+
+        if IfcName == IfcPropertyName and RevitName != '':
+            # print('getRevitParameterName ', IfcPropertyName, ' -> ',  MappedRevitParameterName)
+            return RevitName
+        
+        elif IfcName == IfcPropertyName and RevitName == '':
+            # print('getRevitParameterName ', IfcPropertyName, ' -> ', MappedIfcPropertyName)
+            return IfcName   
 
 #Check Requirements
-def checkRequirementValue(requ, Revit_parameter, Revit_parameterValue):
+def checkRequirementValue(requ, ParameterName, ParameterValue):
 
-    if requ.value != None:
+    if requ.value != None and ParameterValue != None:
 
         if type(requ.value) == str:
-            if requ.value == Revit_parameterValue: 
+            if requ.value == ParameterValue: 
                 pass
             else:
-                print(f'WARNING : {Revit_parameter}  :  "{Revit_parameterValue}"  nicht erlaubter wert')
+                print(f'WARNING : {ParameterName}  :  "{ParameterValue}"  nicht erlaubter wert')
                 print(f'Erlaubter Wertebereich : "{requ.value}"')
 
         elif 'pattern' in requ.value.options:
             pattern = requ.value.options['pattern']
-            if re.match(pattern, Revit_parameterValue):
+            if re.match(pattern, ParameterValue):
                 pass
             else:
-                print(f'WARNING :  {Revit_parameter}  :  "{Revit_parameterValue}"   nicht erlaubter Werteausdruck')
+                print(f'WARNING :  {ParameterName}  :  "{ParameterValue}"   nicht erlaubter Werteausdruck')
                 print(f'Erlaubter Wertebereich : "{requ.value}"')
 
         elif 'enumeration' in requ.value.options:
             ValueList = requ.value.options['enumeration']
-            if Revit_parameterValue in ValueList:
+            if ParameterValue in ValueList:
                 pass
             else:
-                print(f'WARNING :  {Revit_parameter}  :  "{Revit_parameterValue}"   nicht erlaubter Listenwert')
+                print(f'WARNING :  {ParameterName}  :  "{ParameterValue}"   nicht erlaubter Listenwert')
                 print(f'Erlaubte Werteliste : {ValueList}')
     
+    #Handeling Spezialfall wenn Wert nicht "" sondern None also nicht str ist. 
+    elif requ.value != None and ParameterValue == None:
+        print(f'WARNING : {ParameterName}  :  darf nicht lehr sein')
+        print(f'Geforderter Wertebereich : "{requ.value}"')
+
     else:
         pass
 
 
 #Requirements Facet
 def checkRequirements(element, requ):
-    if requ.__class__.__name__ == "Attribute" or requ.__class__.__name__ == "Property":
+    if requ.__class__.__name__ == "Attribute":
         
         try:
-            Revit_parameter = element.LookupParameter(f'Ifc{requ.name}')
-            Revit_parameterName = f'Ifc{requ.name}' #Revit_parameter.Name
-            Revit_parameterValue = Revit_parameter.AsValueString()
+            RevitParameter = element.LookupParameter(f'Ifc{requ.name}')
+            RevitParameterName = f'Ifc{requ.name}' #Revit_parameter.Name
+            Revit_parameterValue = RevitParameter.AsValueString()
         except:
-            print(f'Gefordertes Attribut "{requ.name}" ist nicht vorhanden')
+            print(f'Geforderter Parameter "{requ.name}" ist nicht vorhanden')
             Revit_parameterValue = None
             # forSetUpnewParamter(Revit_parameterName, 'Rooms')
 
         if Revit_parameterValue != None:
             if requ.get_usage() != 'prohibited':
-                checkRequirementValue(requ, Revit_parameterName, Revit_parameterValue)
+                checkRequirementValue(requ, RevitParameterName, Revit_parameterValue)
             else:
-                print(f'WARNING : {Revit_parameterName} : Attributwerte darf nicht vorhanden sein')
+                print(f'WARNING : {RevitParameterName} : Parameterwert darf nicht vorhanden sein')
 
         elif requ.get_usage() == 'required':
-            print(f'WARNING : {Revit_parameterName} : Attributwerte muss vorhanden sein')
+            print(f'WARNING : {RevitParameterName} : Parameterwert muss vorhanden sein')
     
+
     elif requ.__class__.__name__ == "Property":
         try:
-            Revit_parameter = element.LookupParameter(requ.name)
-            Revit_parameterName = requ.name
-            Revit_parameterValue = Revit_parameter.AsValueString()
+            RevitParameterName = getRevitParameterName(requ.name, RevitParameterMappingDataFrame)          
+            RevitParameter = element.LookupParameter(RevitParameterName)
+            Revit_parameterValue = RevitParameter.AsValueString()
         except:
-            print(f'Gefordertes Attribut "{requ.name}" ist nicht vorhanden')
-            Revit_parameterValue = None
-            # forSetUpnewParamter(Revit_parameterName, 'Rooms')
+            print(f'Gefordertes Parameter "{RevitParameterName}" ist nicht vorhanden')
+            RevitParameterName = None
+        
 
-        if Revit_parameterValue != None:
+        if RevitParameterName != None:
             if requ.get_usage() != 'prohibited':
-                checkRequirementValue(requ, Revit_parameterName, Revit_parameterValue)
+                checkRequirementValue(requ, RevitParameterName, Revit_parameterValue)
             else:
-                print(f'WARNING : {Revit_parameterName} : Attributwerte darf nicht vorhanden sein')
+                print(f'WARNING : {RevitParameterName} : Parameterwert darf nicht vorhanden sein')
 
         elif requ.get_usage() == 'required':
-            print(f'WARNING : {Revit_parameterName} : Attributwerte muss vorhanden sein')
+            print(f'WARNING : {RevitParameterName} : Parameterwert muss vorhanden sein')
+
 
     elif requ.__class__.__name__ == "Classification":
         try:      
-            Revit_parameter = element.LookupParameter('Classification.Space.Number')
-            Revit_parameterName = requ.system
-            Revit_parameterValue = Revit_parameter.AsValueString()
+            RevitParameter = element.LookupParameter('Classification.Space.Number')
+            RevitParameterName = requ.system
+            Revit_parameterValue = RevitParameter.AsValueString()
         except:
-            print(f'Gefordertes Attribut "Classification.Space.Number" ist nicht vorhanden')
+            print(f'Gefordertes Parameter "Classification.Space.Number" ist nicht vorhanden')
             Revit_parameterValue = None
             # forSetUpnewParamter(Revit_parameterName, element.Category.Name)
 
         if Revit_parameterValue != None:
-            checkRequirementValue(requ, Revit_parameterName, Revit_parameterValue)
+            checkRequirementValue(requ, RevitParameterName, Revit_parameterValue)
         elif requ.minOccurs == 1:
-            print(f'WARNING : {Revit_parameterName} : Attributwerte muss vorhanden sein')
+            print(f'WARNING : {RevitParameterName} : Parameterwert muss vorhanden sein')
 
 
     elif requ.__class__.__name__ == "Parts":
         print(' Requirement is at Facet Parts, Checking is in procress')
 
+
     elif requ.__class__.__name__ == "Material":
         print(' Requirement is at Facet Material, Checking is in procress')
+
 
 
 def chekingParamters(specification):
@@ -171,25 +216,26 @@ if isChecking['IsIDSChecking'] == True:
             
             element= doc.GetElement(elementId)
             cat = element.Category.Name
+            print(30*'-')
             print('## element.Category.Name')
             print(cat)
             print('##')
 
 
             if isChecking['IsIDSChecking'] == True:
+                
+                print('is checking')
+                print(30*'-')
                 #Soll live die Eingabe geprüft werden öffnen des db files => kann dies ggf. während der laufzeit in der ram vorgehlten werden?
                 with open(dbPath) as file:
                     db = json.load(file)
 
-                    
-                    # print("EVENT  :", event)
-
                     #Ist die Category teil der Anforderung
-                    for Entity in db['IfcCategoryMapping']:
-                                                
-                        if str(cat).upper() in db['IfcCategoryMapping'][Entity] and str(cat).upper() != 'SCHEDULES':
-                            print(f'## IfcCategoryMapping of {Entity}')
-                            print(db['IfcCategoryMapping'][Entity])
+                    for Entity in db['IfcMapping']:
+                        print('Entity : ', Entity)        
+                        if str(cat).upper() != 'SCHEDULES' and str(cat) in db['IfcMapping'][Entity]:
+                            print(f'## IfcMapping of {Entity}')
+                            print(db['IfcMapping'][Entity])
                             print('##')
 
                             #ist der geänderte Paramter teil des IDS wird dies für die Prüfung geöffnet => kann dies ggf. während der laufzeit in der ram vorgehlten werden?

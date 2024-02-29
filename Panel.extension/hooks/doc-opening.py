@@ -1,21 +1,22 @@
+#! python3
+
 ### SATART of CODE doc-opening ###
 ##############################################################################
-from pyrevit import EXEC_PARAMS, DB
+# from pyrevit import EXEC_PARAMS, DB
 
 import json
 ##############################################################################
 
 IsIDScheckingPath = "C:\\temp\\revit\\IsIDSChecking.json"
+#{"IsIDSChecking" : true}
 
+with open(IsIDScheckingPath, 'r', encoding='utf-8') as json_file:
+    isChecking = json.load(json_file)
 
-with open(IsIDScheckingPath) as IsIDSchecking:
-    isChecking = json.load(IsIDSchecking)
+print(isChecking)
 
-    isChecking['IsIDSChecking'] = False
+isChecking['IsIDSChecking'] = False
+print(isChecking)
 
-    jsonString = json.dumps(isChecking)
-
-    IsIDSchecking.write(jsonString)
-    
-IsIDSchecking.close() 
-
+with open(IsIDScheckingPath, 'w', encoding='utf-8') as json_file:
+    json.dump(isChecking, json_file)
