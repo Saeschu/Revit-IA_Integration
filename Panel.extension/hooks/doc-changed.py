@@ -2,13 +2,14 @@
 ### SATART of CODE ImportIDS ###
 # print('\n### SATART of CODE ImportIDS ###')
 ##############################################################################
-# import ifcopenshell
+import ifcopenshell
 import ifctester
 import re
 import json
 import sys
 import sys
 import csv
+import os 
 
 # sys.path.append( '/Pnale.extenstion/lib')
 # from mymodule import get_RevitElementFromIFCmapping
@@ -17,52 +18,67 @@ from pyrevit import EXEC_PARAMS, DB
 from Autodesk.Revit.DB import *
 import System
 from System import Enum
+
+        
 ##############################################################################
 ### Variables
 IDSName = "IDS"
 
-IsIDScheckingPath = "C:\\temp\\revit\\IsIDSChecking.json"
-idsxml = "C:\\temp\\revit\\ids.xml"
-dbPath = "C:\\temp\\revit\\db.json"
+# ConfigPath = "C:\\temp\\revit\\IsIDSChecking.json"
+ConfigPath = "C:\\Users\\Sascha Hostettler\\Documents\\GitHub\\pyRevit-IDS_bSDD\\Revit-IA_Integration\\Panel.extension\\lib\\config.json"
+
+dbPath = 'C:\\temp\\revit\\db.json'
 
 IDSPropertySetDefinedFolderPath = "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\IFC 2021.bundle\\Contents\\2021"
 IDSPropertySetDefinedFileName = str('IDSPropertySetDefined_') + str(IDSName)
 
 
-with open(IsIDScheckingPath) as IsIDSchecking:
-    isChecking = json.load(IsIDSchecking)
+with open(ConfigPath) as ConfigFile:
+    config = json.load(ConfigFile)
 
 
 RevitParameterMappingDataFrame = list( csv.reader(open(str(IDSPropertySetDefinedFolderPath) + str('\\') + str(IDSPropertySetDefinedFileName) + str('.txt'), 'r'), delimiter='\t')  )
 
 ##############################################################################
+def getImportedIDS():
+    directory = 'C:\\temp\\revit'
+    ImportedIDS = []
+    for filename in os.listdir(directory):
+        if os.path.isfile(os.path.join(directory, filename)):
+            if str(filename).endswith('.xml'):
+                ImportedIDS.append(filename.split('.')[0])
+
+    return ImportedIDS 
+
 def getIfcPropertyName(RevitParameterName, RevitParameterMappingDataFrame):
 
     for line in RevitParameterMappingDataFrame:
-        IfcName = line[1]
-        RevitName = line[3]
+        if len(line) > 1:
+            IfcName = line[1]
+            RevitName = line[3]
 
-        if RevitName != '' and RevitName == RevitParameterName:
-            # print('getIfcPropertyName ', RevitParameterName, ' -> ', MappedIfcPropertyName)
-            return IfcName    
-        
-        elif RevitName == '' and IfcName == RevitParameterName:
-            # print('getIfcPropertyName ', RevitParameterName, ' -> ', MappedIfcPropertyName)
-            return IfcName
+            if RevitName != '' and RevitName == RevitParameterName:
+                # print('getIfcPropertyName ', RevitParameterName, ' -> ', MappedIfcPropertyName)
+                return IfcName    
+            
+            elif RevitName == '' and IfcName == RevitParameterName:
+                # print('getIfcPropertyName ', RevitParameterName, ' -> ', MappedIfcPropertyName)
+                return IfcName
 
 def getRevitParameterName(IfcPropertyName, RevitParameterMappingDataFrame):
 
     for line in RevitParameterMappingDataFrame:
-        IfcName = line[1]
-        RevitName = line[3]
+        if len(line) > 1:
+            IfcName = line[1]
+            RevitName = line[3]
 
-        if IfcName == IfcPropertyName and RevitName != '':
-            # print('getRevitParameterName ', IfcPropertyName, ' -> ',  MappedRevitParameterName)
-            return RevitName
-        
-        elif IfcName == IfcPropertyName and RevitName == '':
-            # print('getRevitParameterName ', IfcPropertyName, ' -> ', MappedIfcPropertyName)
-            return IfcName   
+            if IfcName == IfcPropertyName and RevitName != '':
+                # print('getRevitParameterName ', IfcPropertyName, ' -> ',  MappedRevitParameterName)
+                return RevitName
+            
+            elif IfcName == IfcPropertyName and RevitName == '':
+                # print('getRevitParameterName ', IfcPropertyName, ' -> ', MappedIfcPropertyName)
+                return IfcName   
 
 #Check Requirements
 def checkRequirementValue(requ, ParameterName, ParameterValue):
@@ -184,14 +200,14 @@ def chekingParamters(specification):
 
 def forSetUpnewParamter(Parameter, BuiltInCategory):
     print('forSetUpnewParamter')
-    db['IDSArg']
-    ParamterList = db['IDSArg']['NewParamter']
+    dbDataFrame['IDSArg']
+    ParamterList = dbDataFrame['IDSArg']['NewParamter']
     ParamterList.append(Parameter)
 
-    db["IfcCategoryMapping"].update({'NewParamter' : BuiltInCategory})
+    dbDataFrame["IfcCategoryMapping"].update({'NewParamter' : BuiltInCategory})
 
     file = open(dbPath, "w")
-    jsonString = json.dumps(db)
+    jsonString = json.dumps(dbDataFrame)
 
     file.write(jsonString)
     file.close()
@@ -199,43 +215,40 @@ def forSetUpnewParamter(Parameter, BuiltInCategory):
 ##############################################################################
 ##### __MAIN__ #####
 
-if isChecking['IsIDSChecking'] == True:
-
-
-    doc = EXEC_PARAMS.event_args.GetDocument()
-    my_ids = ifctester.open(idsxml)
-    with open(dbPath) as file:
-        db = json.load(file)
-
-
+if config['IsIDSChecking'] == True:
 
     if len(EXEC_PARAMS.event_args.GetModifiedElementIds()) > 0:
         print(20*'-')
 
         for elementId in EXEC_PARAMS.event_args.GetModifiedElementIds():
             
+            doc = EXEC_PARAMS.event_args.GetDocument()
             element= doc.GetElement(elementId)
             cat = element.Category.Name
-            print(30*'-')
-            print('## element.Category.Name')
-            print(cat)
-            print('##')
 
-
-            if isChecking['IsIDSChecking'] == True:
-                
-                print('is checking')
+            if config['IsIDSChecking'] == True and cat != 'Schedules':
                 print(30*'-')
+                print(str('## element.Category.Name: "') + str(cat) + str('" get Checked'))
+                print(30*'-')
+                
                 #Soll live die Eingabe geprüft werden öffnen des db files => kann dies ggf. während der laufzeit in der ram vorgehlten werden?
                 with open(dbPath) as file:
-                    db = json.load(file)
+                    dbDataFrame = json.load(file)
 
+                for IDSName in getImportedIDS():
+                    print(str('\n### ') + str(IDSName) + ' ###')
+                    idsxml = f'C:\\temp\\revit\\{IDSName}.xml'
+                        
+                    with open(dbPath) as file:
+                            dbDataFrame = json.load(file)
+                            
+                    
                     #Ist die Category teil der Anforderung
-                    for Entity in db['IfcMapping']:
-                        print('Entity : ', Entity)        
-                        if str(cat).upper() != 'SCHEDULES' and str(cat) in db['IfcMapping'][Entity]:
-                            print(f'## IfcMapping of {Entity}')
-                            print(db['IfcMapping'][Entity])
+                    for Entity in dbDataFrame[IDSName]['IfcMapping']:
+                        if str(cat) in dbDataFrame[IDSName]['IfcMapping'][Entity]:
+
+                            print(f'## IfcMapping of Entity: {Entity}')
+                            print(dbDataFrame[IDSName]['IfcMapping'][Entity])
                             print('##')
 
                             #ist der geänderte Paramter teil des IDS wird dies für die Prüfung geöffnet => kann dies ggf. während der laufzeit in der ram vorgehlten werden?

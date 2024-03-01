@@ -11,7 +11,7 @@ import clr
 ##############################################################################
 
 ##############################################################################
-def set_new_parameter_to_instance_wall(app, spFile, paramterGroupName, parameter_name, paramter_DataType, tooltip):
+def SetUpStandardIfcParameter(app, doc, spFile, paramterGroupName, parameter_name, paramter_DataType, tooltip):
   
     # Create a new group in the shared parameters file
 
@@ -93,7 +93,7 @@ app = __revit__.Application
 parameterlistFromIDS = ["IfcDescription", "IfcObjectType", "SiteName", "SiteDescription", "SiteLandTitleNumber", "SiteLongName", "SiteObjectType", "BuildingDescription", "BuildingLongName", "BuildingObjectType" ]
 ####
 spFile   = app.OpenSharedParameterFile()
-paramterGroupName = "IR-FM_fromIDS"
+paramterGroupName = "StandardIFCParameter"
 paramter_DataType = SpecTypeId.String.Text
 tooltip ="tooltiop, new Paramter for a Projectinformatin"
 ####
@@ -116,7 +116,7 @@ t.Start()
 
 # Changes
 for parameter_name in parameterlistFromIDS  :
-    set_new_parameter_to_instance_wall(app, spFile, paramterGroupName, parameter_name, paramter_DataType, tooltip)
+    SetUpStandardIfcParameter(app, doc, spFile, paramterGroupName, parameter_name, paramter_DataType, tooltip)
     print(parameter_name,  ' : ist sucsessfuly added to the Catecory Wall')
 
 # End Transaction:

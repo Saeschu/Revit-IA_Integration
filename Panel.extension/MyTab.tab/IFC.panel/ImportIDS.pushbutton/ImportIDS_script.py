@@ -20,8 +20,12 @@ doc = __revit__.ActiveUIDocument.Document
 uidoc = __revit__.ActiveUIDocument
 app = __revit__.Application
 ##############################################################################
-#handeling db
-IDSName = 'IDS'
+
+#load IDS
+inputPath = input("enter Path to IDS: ")
+
+IDSName = inputPath.split("\\")[-1].split('.')[0]
+
 ProjectFilePath = 'C:\\temp\\revit'
 
 dbJsonFile = f'{ProjectFilePath}\\db.json'
@@ -36,19 +40,21 @@ RevitIfcMappingFile = "C:\ProgramData\Autodesk\RVT 2024\Test_Msc_23-12-26_export
 SampleIdsPath = f'C:\\Users\\Sascha Hostettler\\OneDrive - FHNW\\FHNW_Msc_VDC\\_MSc_Thesis_IDS\\04_Data\\SampleData\\PoC-Sampels\\{IDSName}.xml'
 
 #Creat dbDataFrame
-dbJsonObject = open(dbJsonFile, "w")
+dbJsonObject = open(dbJsonFile, "r")
+try:
+    dbDataFrame = json.load(dbJsonObject)
+    dbDataFrame.update({IDSName : {'IDSArg': {}, 'IfcMapping' : {}}})
+except:
+    dbDataFrame = {IDSName : {'IDSArg': {}, 'IfcMapping' : {}}}
 
 
-#open IDS
-inputPath = input("enter Path to IDS: ")
-print(inputPath)
+if inputPath.upper() == "SAMPLE":
+    idsPath = SampleIdsPath
+else:
+    idsPath = inputPath.split('"')[1].replace("\\", "\\\\")
 
-# if inputPath == "sample":
-#     idsPath = SampleIdsPath
-# else:
-#     idsPath = inputPath
-
-idsPath = SampleIdsPath
+print(idsPath)
+# idsPath = SampleIdsPath
 my_ids = ifctester.open(idsPath)
 print(f'{my_ids.info["title"]} has been loaded\n')
 
@@ -62,14 +68,10 @@ try:
 except:
     RevitParameterMappingDataFrame = []
     
-##############################################################################
-
-dbDataFrame = {'IDSArg': {}, 'IfcMapping' : {}}
-ParameterListe = []
 
 ##############################################################################
 
-##__MAIN__##
+
 for specification in my_ids.specifications:
     for appli in specification.applicability:
 
@@ -77,13 +79,13 @@ for specification in my_ids.specifications:
             # print(appli.name)
             # print(getRevitCategoryFromIFCmapping(appli.name, IfcCategoryMappingFile))
 
-            dbDataFrame['IfcMapping'].update({str(appli.name).upper() : getRevitCategoryFromIFCmapping(appli.name, IfcCategoryMappingFile)})
+            dbDataFrame[IDSName]['IfcMapping'].update({str(appli.name).upper() : getRevitCategoryFromIFCmapping(appli.name, IfcCategoryMappingFile)})
             
             try:
-               ParamterList = dbDataFrame['IDSArg'][str(appli.name).upper()]
+                ParamterList = dbDataFrame[IDSName]['IDSArg'][str(appli.name).upper()]
             except:
-                dbDataFrame['IDSArg'].update({str(appli.name).upper() : []})
-                ParamterList = dbDataFrame['IDSArg'][str(appli.name).upper()]
+                dbDataFrame[IDSName]['IDSArg'].update({str(appli.name).upper() : []})
+                ParamterList = dbDataFrame[IDSName]['IDSArg'][str(appli.name).upper()]
             
             for requ in specification.requirements:
                 
@@ -93,7 +95,7 @@ for specification in my_ids.specifications:
                     requ.maxOccurs = None
 
                     ParamterList.append(f'Ifc{requ.name}')
-                    dbDataFrame['IDSArg'].update({str(appli.name).upper() : ParamterList})
+                    dbDataFrame[IDSName]['IDSArg'].update({str(appli.name).upper() : ParamterList})
 
                 elif requ.__class__.__name__ == "Property":
 
@@ -110,10 +112,11 @@ for specification in my_ids.specifications:
 
                 elif requ.__class__.__name__ == "Material":
                     print('Requirement is at Facet Parts, Importing ist in Procress')
-                                  
+            
+                                    
                 
 ##############################################################################
-
+dbJsonObject = open(dbJsonFile, "w")
 jsonString = json.dumps(dbDataFrame)
 dbJsonObject.write(jsonString)
 dbJsonObject.close()

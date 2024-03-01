@@ -5,18 +5,20 @@
 # from pyrevit import EXEC_PARAMS, DB
 
 import json
+import os
+
 ##############################################################################
 
-IsIDScheckingPath = "C:\\temp\\revit\\IsIDSChecking.json"
+IsIDScheckingPath = "C:\\Users\\Sascha Hostettler\\Documents\\GitHub\\pyRevit-IDS_bSDD\\Revit-IA_Integration\\Panel.extension\\lib\\config.json"
 #{"IsIDSChecking" : true}
 
 with open(IsIDScheckingPath, 'r', encoding='utf-8') as json_file:
     isChecking = json.load(json_file)
 
-print(isChecking)
+print('is Checking : ' + str(isChecking['IsIDSChecking']))
 
 isChecking['IsIDSChecking'] = False
-print(isChecking)
+print('is Checking : ' + str(isChecking['IsIDSChecking']))
 
 with open(IsIDScheckingPath, 'w', encoding='utf-8') as json_file:
     json.dump(isChecking, json_file)

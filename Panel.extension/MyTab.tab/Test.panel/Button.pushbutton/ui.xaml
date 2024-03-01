@@ -8,6 +8,5 @@
         <Button Content="Save" Height="49" Margin="0,10,0,20" Click="say_hello"/>
         <Label Content="MappingTable der IFC Property" FontSize="18" Margin="0,10,0,20"/>
         <TextBox x:Name="texbox" TextWrapping="Wrap" Text="TextBox" Width="764" Height="55" FontSize="16"/>
-        <DataGrid Height="100" d:ItemsSource="{d:SampleData ItemCount=7}" SelectionChanged="DataGrid_SelectionChanged"/>
     </StackPanel>
 </Window>
