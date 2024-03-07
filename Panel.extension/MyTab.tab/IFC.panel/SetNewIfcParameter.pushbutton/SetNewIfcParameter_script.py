@@ -4,7 +4,7 @@ print('\n### SATART of CODE ImportIDS ###')
 
 # Import necessary Revit API classes
 from pyrevit import revit, DB, forms, script, EXEC_PARAMS
-from pyrevit.forms import WPFWindow
+# from pyrevit.forms import WPFWindow
 from Autodesk.Revit.DB import *
 import System
 # from System import *
@@ -22,9 +22,6 @@ app = __revit__.Application
 
 output = script.get_output()
 ##############################################################################
-class CreatRevitParameter:
-    def __init__(self):
-        self.Apfel = 'Apfel'
 
 def getImportedIDS():
     directory = 'C:\\temp\\revit'
@@ -36,6 +33,34 @@ def getImportedIDS():
 
     return ImportedIDS 
 
+def CreatViewforIR(IDSName):
+    #ALL VIEW TYPES
+    view_types = FilteredElementCollector(doc).OfClass(ViewFamilyType).ToElements()
+
+    #FILTER VIEW TYPES
+    for view in view_types:
+        if view.ViewFamily == ViewFamily.ThreeDimensional:
+            view_type_3D = view
+
+    View3DCollector = []
+    for view in FilteredElementCollector(doc).OfClass(View3D):
+        View3DCollector.append({view.Name : view})
+
+    # Create 3D - Isometricview
+    if IDSName not in View3DCollector:
+        t = Transaction(doc,'Create 3D Isometric')
+        t.Start() 
+        view3D = View3D.CreateIsometric(doc, view_type_3D.Id) 
+        view3D.Name = IDSName
+        t.Commit()
+        return True
+    
+    else:
+        return False
+        
+
+    
+    
 def CreatMapping(RevitParameterMappingDataFrame):
     def showMapping(RevitParameterMappingDataFrame):
         DataSet = []
@@ -175,9 +200,10 @@ def ParamterBindungToBuiltInCategory(app, doc, spFile, builtinCategory, paramter
 
 ##############################################################################
 ##############################################################################
-#handeling db
-IDSName = forms.CommandSwitchWindow.show(getImportedIDS(),  message='zu Loeschendes IDS angeben')
+
+IDSName = forms.CommandSwitchWindow.show(getImportedIDS(),  message='IDS Auswählen um dessen Parameter anzulegen')
 # IDSName = 'IDS'
+#handeling db
 ProjectFilePath = 'C:\\temp\\revit'
 
 dbJsonFile = str(ProjectFilePath) + str('\\db.json')
@@ -213,12 +239,12 @@ tooltip ="Tag: IDS, Description: Parameter Creadet from IDS Requirement"
 ##############################################################################
 
 CreatMapping(RevitParameterMappingDataFrame)
-
+CreatViewforIR(IDSName)
 
 ##__MAIN__##
 print()
 # Start Transaction:
-t = Transaction(doc, "Add Parameters from IDS to Wall-elements")
+t = Transaction(doc, "Add Parameters from IDS to Categories")
 t.Start()
 
 print('## IDSArg Keys')

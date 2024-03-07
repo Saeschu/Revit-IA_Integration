@@ -4,6 +4,7 @@
 import json
 from lib.bSDDRequest import getbSDDRequest
 import ifctester
+import os
 
 from pyrevit import EXEC_PARAMS, DB
 from Autodesk.Revit.DB import *
@@ -16,10 +17,15 @@ uidoc = __revit__.ActiveUIDocument
 app = __revit__.Application
 
 ##############################################################################
+def getImportedIDS():
+    directory = 'C:\\temp\\revit'
+    ImportedIDS = []
+    for filename in os.listdir(directory):
+        if os.path.isfile(os.path.join(directory, filename)):
+            if str(filename).endswith('.xml'):
+                ImportedIDS.append(filename.split('.')[0])
 
-
-#####
-  
+    return ImportedIDS 
 
 #Check Requirements
 def getRequirements(requ, appliName):
@@ -35,7 +41,6 @@ def getRequirements(requ, appliName):
                 print(f'The {requ.name} shall not be {requ.value}')
             
         else:
-
             if requ.get_usage() == 'required':
                 print(f'The {requ.name} shall be provided')
 
@@ -52,7 +57,6 @@ def getRequirements(requ, appliName):
                 print(f'{requ.name} data shall not be {requ.value} and in the dataset {requ.propertySet}')
             
         else:
-
             if requ.get_usage() == 'required':
                 print(f'{requ.name} data shall be provided in the dataset {requ.propertySet}')
 
@@ -69,7 +73,6 @@ def getRequirements(requ, appliName):
                 print(f'Shall not have a {requ.system} reference of {requ.value}')
             
         else:
-
             if requ.get_usage() == 'required':
                 print(f'Shall be classified using {requ.system}')
 
@@ -86,18 +89,16 @@ def getRequirements(requ, appliName):
 
     print()
 
-
-
 ##############################################################################
 
-
-IsIDScheckingPath = "C:\\temp\\revit\\IsIDSChecking.json"
-idsxml = "C:\\temp\\revit\\ids.xml"
+# IsIDScheckingPath = "C:\\temp\\revit\\IsIDSChecking.json"
 dbPath = "C:\\temp\\revit\\db.json"
+ConfigPath = "C:\\Users\\Sascha Hostettler\\Documents\\GitHub\\pyRevit-IDS_bSDD\\Revit-IA_Integration\\Panel.extension\\lib\\config.json"
+# with open(IsIDScheckingPath) as IsIDSchecking:
+#     isChecking = json.load(IsIDSchecking)
 
-with open(IsIDScheckingPath) as IsIDSchecking:
-    isChecking = json.load(IsIDSchecking)
-
+with open(ConfigPath) as ConfigFile:
+    config = json.load(ConfigFile)
 
 elementId = uidoc.Selection.GetElementIds()[0].Value
 
@@ -106,103 +107,107 @@ cat = element.Category.Name
 ##############################################################################
 
 with open(dbPath) as file:
-    db = json.load(file)
+    dbDataFrame = json.load(file)
 
+for IDSName in getImportedIDS():
+    print(str('\n### ') + str(IDSName) + ' ###')
+    idsxml = f'C:\\temp\\revit\\{IDSName}.xml'
+    my_ids = ifctester.open(idsxml)
+    print(my_ids.info['title']) 
 
-#Ist die Category teil der Anforderung
-for Entity in db['IfcCategoryMapping']:
-    if str(cat).upper() in db['IfcCategoryMapping'][Entity]:
+    #Ist die Category teil der Anforderung
+    for Entity in dbDataFrame[IDSName]['IfcMapping']:
+        if str(cat).upper() in dbDataFrame[IDSName]['IfcMapping'][Entity]:
 
-        my_ids = ifctester.open(idsxml)
-        print(my_ids.info['title']) 
+        
 
-        #Specifications
-        for specification in my_ids.specifications:
-            
-            #Applicability 
-            for appli in specification.applicability:
+            #Specifications
+            for specification in my_ids.specifications:
                 
-                if appli.__class__.__name__ == 'Entity':   
-
-                    appliName = appli.name   
-                        
-                    if str(appliName).upper() in db['IfcCategoryMapping'] and str(cat) in db['IfcCategoryMapping'][str(appliName).upper()]:
-
-                        print('\n')
-                        print(20*'-')
-                        print(specification.name)
-                        print(f'The specification is {specification.get_usage()}')
-
-                        for requ in specification.requirements:
-                            getRequirements(requ, appli.name)
-                                
-                        
-                elif appli.__class__.__name__ == 'Attribute':
-                    for parameter in element.Parameters:
-                        
-                        if parameter.Definition.Name == appli.name:
-                            
-                            print('\n')
-                            print(20*'-')
-                            print(specification.name)
-                            print(f'The specification is {specification.get_usage()}')
-
-                            for requ in specification.requirements:
-                                getRequirements(requ, appli.name)       
-
-                elif appli.__class__.__name__ == 'Property':
-                     for parameter in element.Parameters:
-                        
-                        if parameter.Definition.Name == appli.name:
-                            
-                            print('\n')
-                            print(20*'-')
-                            print(specification.name)
-                            print(f'The specification is {specification.get_usage()}')
-
-                            for requ in specification.requirements:
-                                getRequirements(requ, appli.name) 
+                #Applicability 
+                for appli in specification.applicability:
                     
-                elif appli.__class__.__name__ == 'Classification':
-                  
-                    for parameter in element.Parameters:
-                        
-                        if parameter.Definition.Name == 'Classification.Space.Number':
+                    if appli.__class__.__name__ == 'Entity':   
+
+                        appliName = appli.name   
                             
+                        if str(appliName).upper() in dbDataFrame[IDSName]['IfcMapping'] and str(cat) in dbDataFrame[IDSName]['IfcMapping'][str(appliName).upper()]:
+
                             print('\n')
                             print(20*'-')
                             print(specification.name)
                             print(f'The specification is {specification.get_usage()}')
 
                             for requ in specification.requirements:
-                                getRequirements(requ, appli.system)
-                
+                                getRequirements(requ, appli.name)
+                                    
+                            
+                    elif appli.__class__.__name__ == 'Attribute':
+                        for parameter in element.Parameters:
+                            
+                            if parameter.Definition.Name == appli.name:
+                                
+                                print('\n')
+                                print(20*'-')
+                                print(specification.name)
+                                print(f'The specification is {specification.get_usage()}')
 
-                elif appli.__class__.__name__ == 'Parts':
-                    print('Applicability is at Facet Parts, Checking is in procress')        
-                
-                elif appli.__class__.__name__ == 'Material':
-                    print('Applicability is at Facet Material, Checking is in procress')  
-        print('\n')
-        break
-    else:
-        print('Entity ist nicht Teil der geladenen Informationsanforderung')    
+                                for requ in specification.requirements:
+                                    getRequirements(requ, appli.name)       
+
+                    elif appli.__class__.__name__ == 'Property':
+                        for parameter in element.Parameters:
+                            
+                            if parameter.Definition.Name == appli.name:
+                                
+                                print('\n')
+                                print(20*'-')
+                                print(specification.name)
+                                print(f'The specification is {specification.get_usage()}')
+
+                                for requ in specification.requirements:
+                                    getRequirements(requ, appli.name) 
+                        
+                    elif appli.__class__.__name__ == 'Classification':
+                    
+                        for parameter in element.Parameters:
+                            
+                            if parameter.Definition.Name == 'Classification.Space.Number':
+                                
+                                print('\n')
+                                print(20*'-')
+                                print(specification.name)
+                                print(f'The specification is {specification.get_usage()}')
+
+                                for requ in specification.requirements:
+                                    getRequirements(requ, appli.system)
+                    
+
+                    elif appli.__class__.__name__ == 'Parts':
+                        print('Applicability is at Facet Parts, Checking is in procress')        
+                    
+                    elif appli.__class__.__name__ == 'Material':
+                        print('Applicability is at Facet Material, Checking is in procress')  
+            print('\n')
+            break
+        else:
+            print('Entity ist nicht Teil der geladenen Informationsanforderung')    
 
 
-print(20*'-')
-for parameter in element.Parameters:
-    # print(parameter)
-    if parameter.Definition.Name == 'Classification.Space.Number':
-        print(10*'-')
-        sp_Name = element.LookupParameter('Classification.Space.Description')
-        Selected_Dictionary = sp_Name.AsString()
-        Selected_Class = parameter.AsValueString()
+    print(20*'-')
+    for parameter in element.Parameters:
+        # print(parameter)
+        if parameter.Definition.Name == 'Classification.Space.Number':
+            print(10*'-')
+            sp_Name = element.LookupParameter('Classification.Space.Description')
+            Selected_Dictionary = sp_Name.AsString()
+            Selected_Class = parameter.AsValueString()
 
-        print(Selected_Dictionary, Selected_Class)
+            print(Selected_Dictionary, Selected_Class)
 
-        try:
-            getbSDDRequest(Selected_Dictionary, Selected_Class)
-        except:
-            print(f'Error occurs while bSDD request, Selected_Dictionary: {Selected_Dictionary}, Selected_Class: {Selected_Class}')
+            try:
+                getbSDDRequest(Selected_Dictionary, Selected_Class)
+            except:
+                print(f'Error occurs while bSDD request, Selected_Dictionary: {Selected_Dictionary}, Selected_Class: {Selected_Class}')
 
-print('Ende')
+    print('Ende')

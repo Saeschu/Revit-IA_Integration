@@ -4,5 +4,6 @@ layout:
   - SetNewIfcParameter
   - StartIDSTesting
   - GetRequirements
+  - ExportIFC
   
   

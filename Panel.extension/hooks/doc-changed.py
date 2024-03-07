@@ -231,7 +231,6 @@ if config['IsIDSChecking'] == True:
                 print(str('## element.Category.Name: "') + str(cat) + str('" get Checked'))
                 print(30*'-')
                 
-                #Soll live die Eingabe geprüft werden öffnen des db files => kann dies ggf. während der laufzeit in der ram vorgehlten werden?
                 with open(dbPath) as file:
                     dbDataFrame = json.load(file)
 
@@ -251,7 +250,6 @@ if config['IsIDSChecking'] == True:
                             print(dbDataFrame[IDSName]['IfcMapping'][Entity])
                             print('##')
 
-                            #ist der geänderte Paramter teil des IDS wird dies für die Prüfung geöffnet => kann dies ggf. während der laufzeit in der ram vorgehlten werden?
                             my_ids = ifctester.open(idsxml)
                             
                             #Specifications
@@ -259,6 +257,10 @@ if config['IsIDSChecking'] == True:
                                 
                                 #Applicability 
                                 for appli in specification.applicability:
+                                    #ToDo Bedingung für Kardinalität applicabilty definieren
+                                    #ToDo Regel einbauen, dass mehrer Appli kombiniert als Schnittmenge gelten, nur Prüfen wenn alle appli erfüllt sind
+                                    print(appli.get_usage())
+                                    print(len(appli))
                                     
                                     if appli.__class__.__name__ == 'Entity':
 
@@ -266,7 +268,8 @@ if config['IsIDSChecking'] == True:
 
                                             if str(appliName).upper() == str(Entity).upper():
                                                 print(f'{str(appliName).upper()} = {str(Entity).upper()}')
-                                        
+
+                                                
                                                 for requ in specification.requirements:
                                                     print(10*'-')
                                                     checkRequirements(element, requ)

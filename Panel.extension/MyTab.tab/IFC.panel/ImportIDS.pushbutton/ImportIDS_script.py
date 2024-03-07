@@ -21,6 +21,8 @@ uidoc = __revit__.ActiveUIDocument
 app = __revit__.Application
 ##############################################################################
 
+IncludeAbstractEntity = True
+
 #load IDS
 inputPath = input("enter Path to IDS: ")
 
@@ -56,8 +58,8 @@ else:
 print(idsPath)
 # idsPath = SampleIdsPath
 my_ids = ifctester.open(idsPath)
-print(f'{my_ids.info["title"]} has been loaded\n')
-
+print(f'{my_ids.info["title"]} ({my_ids.info["version"]}) has been loaded\n')
+IfcSchema = ifcopenshell.schema_by_name(schema= my_ids.info["version"], schema_version=None)
 
 #open RevitIfcMappingFile
 IfcCategoryMappingFile = open(RevitIfcMappingFile, 'r', encoding="utf-16")
@@ -76,16 +78,42 @@ for specification in my_ids.specifications:
     for appli in specification.applicability:
 
         if appli.__class__.__name__ == "Entity": 
-            # print(appli.name)
-            # print(getRevitCategoryFromIFCmapping(appli.name, IfcCategoryMappingFile))
-
-            dbDataFrame[IDSName]['IfcMapping'].update({str(appli.name).upper() : getRevitCategoryFromIFCmapping(appli.name, IfcCategoryMappingFile)})
             
-            try:
-                ParamterList = dbDataFrame[IDSName]['IDSArg'][str(appli.name).upper()]
-            except:
-                dbDataFrame[IDSName]['IDSArg'].update({str(appli.name).upper() : []})
-                ParamterList = dbDataFrame[IDSName]['IDSArg'][str(appli.name).upper()]
+            if type(appli.name) == list:
+                EnityList = appli.name
+            else:
+                EnityList = [appli.name]
+
+            for EnityName in EnityList:
+                #Falls gewollt wird in diesem Abschnitt zu einer Abstrakte IfcEntitaet alle ihre Kindklassen auf die Revit Kategorie überführt
+                decleration = IfcSchema.declaration_by_name(EnityName)
+                if decleration.is_abstract() == True and IncludeAbstractEntity == True:
+                    EntityObj = IfcSchema.declaration_by_name(EnityName)
+                    IsAbstract = EntityObj.is_abstract()
+                    InstanceListe = []
+
+                    while IsAbstract:
+                        for ChiledEntity in ifcopenshell.util.schema.get_subtypes(EntityObj):
+                            if ChiledEntity.is_abstract() == False:
+                                InstanceListe.append(str(ChiledEntity).split(' ')[1][:-1])
+                                # print(ChiledEntity)
+                            
+                        IsAbstract = ChiledEntity.is_abstract()
+                        EntityObj = ChiledEntity
+
+                    for Entity in InstanceListe:
+                        dbDataFrame[IDSName]['IfcMapping'].update({str(Entity).upper() : getRevitCategoryFromIFCmapping(Entity, IfcCategoryMappingFile)})
+                    pass
+                
+                #Handelt es sich direkt um eine Instanziierbare Klasse erfolgt die Überführung auf die Revitkategorie
+                else:
+                    dbDataFrame[IDSName]['IfcMapping'].update({str(EnityName).upper() : getRevitCategoryFromIFCmapping(EnityName, IfcCategoryMappingFile)})
+                    
+                    try:
+                        ParamterList = dbDataFrame[IDSName]['IDSArg'][str(appli.name).upper()]
+                    except:
+                        dbDataFrame[IDSName]['IDSArg'].update({str(EnityName).upper() : []})
+                        ParamterList = dbDataFrame[IDSName]['IDSArg'][str(EnityName).upper()]
             
             for requ in specification.requirements:
                 
