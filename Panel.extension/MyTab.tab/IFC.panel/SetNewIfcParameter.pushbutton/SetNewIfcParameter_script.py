@@ -1,4 +1,11 @@
 ### SATART of CODE ImportIDS ###
+#Autor: Sascha Hostettler
+#Datum: 20.05.2024
+#Version: ?
+#Beschrieb: 
+#
+#
+### SATART of CODE ImportIDS ###
 print('\n### SATART of CODE ImportIDS ###')
 ##############################################################################
 
@@ -57,8 +64,6 @@ def CreatViewforIR(IDSName):
     
     else:
         return False
-        
-
     
     
 def CreatMapping(RevitParameterMappingDataFrame):
@@ -144,25 +149,25 @@ def ParamterBindungToBuiltInCategory(app, doc, spFile, builtinCategory, paramter
         print(str(" Paramter will be added to Category ") +  str(MyCategories))
   
         # Create a new group in the shared parameters file if not allready exist
-        my_groups = spFile.Groups
+        myGroups = spFile.Groups
     
-        all_groups = {}
-        for group in my_groups:
-            all_groups[group.Name] = group
+        allGroups = {}
+        for group in myGroups:
+            allGroups[group.Name] = group
 
-        if paramterGroupName not in all_groups:
-            my_group = my_groups.Create(paramterGroupName)
-            print(str("     Group created:  ") + str(my_group.Name))
+        if paramterGroupName not in allGroups:
+            myGroup = myGroups.Create(paramterGroupName)
+            print(str("     Group created:  ") + str(myGroup.Name))
 
         else:
-            my_group = all_groups[paramterGroupName]
-            print(str("     Group alread exist: ") +  str(my_group.Name))      
+            myGroup = allGroups[paramterGroupName]
+            print(str("     Group alread exist: ") +  str(myGroup.Name))      
 
 
         # Create an instance definition of the Parameter in definition group MyParameters
 
         AllParamters = {}
-        for parameter in my_group.Definitions:
+        for parameter in myGroup.Definitions:
             AllParamters[parameter.Name] = parameter
 
         if ParameterName  not in AllParamters:
@@ -171,7 +176,7 @@ def ParamterBindungToBuiltInCategory(app, doc, spFile, builtinCategory, paramter
             
             # Set tooltip
             option.Description = tooltip
-            MyDefinitionProductDate = my_group.Definitions.Create(option)
+            MyDefinitionProductDate = myGroup.Definitions.Create(option)
             
             print(str("     Parameter created:  ") +  str(ParameterName))
 

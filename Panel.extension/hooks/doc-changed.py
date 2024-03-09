@@ -1,4 +1,12 @@
 #! python3
+
+### SATART of CODE ImportIDS ###
+#Autor: Sascha Hostettler
+#Datum: 20.05.2024
+#Version: ?
+#Beschrieb: 
+#
+#
 ### SATART of CODE ImportIDS ###
 # print('\n### SATART of CODE ImportIDS ###')
 ##############################################################################
@@ -11,17 +19,18 @@ import sys
 import csv
 import os 
 
-# sys.path.append( '/Pnale.extenstion/lib')
-# from mymodule import get_RevitElementFromIFCmapping
+
 
 from pyrevit import EXEC_PARAMS, DB
 from Autodesk.Revit.DB import *
 import System
 from System import Enum
 
-        
+# sys.path.append( '/Pnale.extenstion/lib')
+# from mymodule import get_RevitElementFromIFCmapping 
+     
 ##############################################################################
-### Variables
+### Variables -> muss neu über die Liste aller importierten IDS iteriert werden
 IDSName = "IDS"
 
 # ConfigPath = "C:\\temp\\revit\\IsIDSChecking.json"

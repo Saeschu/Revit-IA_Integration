@@ -1,29 +1,34 @@
 #! python3
 
 ### SATART of CODE ImportIDS ###
+#Autor: Sascha Hostettler
+#Datum: 20.05.2024
+#Version: ?
+#Beschrieb: 
+#
+#
+### SATART of CODE ImportIDS ###
 print('\n### SATART of CODE ImportIDS ###')
 ##############################################################################
-
-# Import necesseray libraris
 import ifcopenshell
 import ifctester
-
 import json
 import csv
 
-#My Moduls
+#Meine ausgelagerten Module
 from lib.SetUpPropertySetDefinition import SetUpIDSPropertySetDefinition
 from lib.getRevitCategoryFromIFCmapping import getRevitCategoryFromIFCmapping
+from lib.getInstanceListe import getInstanceListe
 
-# Application Members
-doc = __revit__.ActiveUIDocument.Document
-uidoc = __revit__.ActiveUIDocument
-app = __revit__.Application
+# Application Members von/für Revit
+# doc = __revit__.ActiveUIDocument.Document
+# uidoc = __revit__.ActiveUIDocument
+# app = __revit__.Application
 ##############################################################################
-
+# Legt fest ob bei Abstrakten Klassen die Kindelemente gesucht und auf Categorien überführt werden
 IncludeAbstractEntity = True
 
-#load IDS
+#Laden des zu importierenden IDS
 inputPath = input("enter Path to IDS: ")
 
 IDSName = inputPath.split("\\")[-1].split('.')[0]
@@ -38,10 +43,10 @@ IDSPropertySetDefinedFileName = f'IDSPropertySetDefined_{IDSName}'
 
 RevitIfcMappingFile = "C:\ProgramData\Autodesk\RVT 2024\Test_Msc_23-12-26_exportlayers-ifc-IAI.txt"
 
-#Sample for Testing
+#Sample Pfad für Tests
 SampleIdsPath = f'C:\\Users\\Sascha Hostettler\\OneDrive - FHNW\\FHNW_Msc_VDC\\_MSc_Thesis_IDS\\04_Data\\SampleData\\PoC-Sampels\\{IDSName}.xml'
 
-#Creat dbDataFrame
+#Erzeuge dbDataFrame
 dbJsonObject = open(dbJsonFile, "r")
 try:
     dbDataFrame = json.load(dbJsonObject)
@@ -54,15 +59,15 @@ if inputPath.upper() == "SAMPLE":
     idsPath = SampleIdsPath
 else:
     idsPath = inputPath.split('"')[1].replace("\\", "\\\\")
-
 print(idsPath)
-# idsPath = SampleIdsPath
+
 my_ids = ifctester.open(idsPath)
-print(f'{my_ids.info["title"]} ({my_ids.info["version"]}) has been loaded\n')
+print(f'65: {my_ids.info["title"]} ({my_ids.info["version"]}) has been loaded\n')
 IfcSchema = ifcopenshell.schema_by_name(schema= my_ids.info["version"], schema_version=None)
 
-#open RevitIfcMappingFile
-IfcCategoryMappingFile = open(RevitIfcMappingFile, 'r', encoding="utf-16")
+#oeffne RevitIfcMappingFile
+IfcCategoryMappingFile = open(RevitIfcMappingFile, 'r', encoding="utf-16").readlines()
+
 
 # Creat dataframe for IDSPropertySetDefined in Revit
 try:
@@ -77,69 +82,76 @@ except:
 for specification in my_ids.specifications:
     for appli in specification.applicability:
 
+        #keine Berücksichtigung des Predefined Typ -> dafür müssen während der Laufzeit neue Felder angelegt werden
         if appli.__class__.__name__ == "Entity": 
             
-            if type(appli.name) == list:
-                EnityList = appli.name
-            else:
-                EnityList = [appli.name]
-
-            for EnityName in EnityList:
-                #Falls gewollt wird in diesem Abschnitt zu einer Abstrakte IfcEntitaet alle ihre Kindklassen auf die Revit Kategorie überführt
-                decleration = IfcSchema.declaration_by_name(EnityName)
-                if decleration.is_abstract() == True and IncludeAbstractEntity == True:
-                    EntityObj = IfcSchema.declaration_by_name(EnityName)
-                    IsAbstract = EntityObj.is_abstract()
-                    InstanceListe = []
-
-                    while IsAbstract:
-                        for ChiledEntity in ifcopenshell.util.schema.get_subtypes(EntityObj):
-                            if ChiledEntity.is_abstract() == False:
-                                InstanceListe.append(str(ChiledEntity).split(' ')[1][:-1])
-                                # print(ChiledEntity)
-                            
-                        IsAbstract = ChiledEntity.is_abstract()
-                        EntityObj = ChiledEntity
-
-                    for Entity in InstanceListe:
-                        dbDataFrame[IDSName]['IfcMapping'].update({str(Entity).upper() : getRevitCategoryFromIFCmapping(Entity, IfcCategoryMappingFile)})
-                    pass
-                
-                #Handelt es sich direkt um eine Instanziierbare Klasse erfolgt die Überführung auf die Revitkategorie
+            if type(appli.name) == str:
+                if IfcSchema.declaration_by_name(appli.name).is_abstract() == True and IncludeAbstractEntity == True:
+                    #Falls gewollt wird in diesem Abschnitt zu einer Abstrakte IfcEntitaet alle ihre Kindklassen auf die Revit Kategorie überführt
+                    EntityList = getInstanceListe(IfcSchema, EntityName)
                 else:
-                    dbDataFrame[IDSName]['IfcMapping'].update({str(EnityName).upper() : getRevitCategoryFromIFCmapping(EnityName, IfcCategoryMappingFile)})
-                    
-                    try:
-                        ParamterList = dbDataFrame[IDSName]['IDSArg'][str(appli.name).upper()]
-                    except:
-                        dbDataFrame[IDSName]['IDSArg'].update({str(EnityName).upper() : []})
-                        ParamterList = dbDataFrame[IDSName]['IDSArg'][str(EnityName).upper()]
-            
-            for requ in specification.requirements:
+                    EntityList = [appli.name]
+
+            elif 'enumeration' in appli.name.options:
+                EntityList = appli.name.options['enumeration']
+                for entity in EntityList:
+                    #Falls gewollt wird in diesem Abschnitt zu einer Abstrakte IfcEntitaet alle ihre Kindklassen auf die Revit Kategorie überführt
+                    if IfcSchema.declaration_by_name(entity).is_abstract() == True and IncludeAbstractEntity == True:
+                        EntityList.remove(entity)                   
+                        for el in getInstanceListe(IfcSchema, EntityName):
+                            EntityList.append(el)
+                    else:
+                        pass
+
+            elif 'pattern' in appli.name.options:
+                print('Funktion pattern in Applicablity ist noch in Arbeit')
+                #Pattern kann hier eingepflegt werden: èber Regex alle Passenden Klassen finden und diese als liste übergeben
+                pass
+        
+        # keine weiteren applicabilities definiert, das noch keine bedingungen eingetroffen sind umd Paramter anzulegen -> dafür müssen während der Laufzeit neue Parameter angelegt werden. 
+            print(EntityList)
+            for EntityName in EntityList:
+                print()
+                print(EntityName)
+                print(IDSName)
+
+                dbDataFrame[IDSName]['IfcMapping'].update({str(EntityName).upper() : getRevitCategoryFromIFCmapping(EntityName, IfcCategoryMappingFile)})
                 
-                if requ.__class__.__name__ == "Attribute":
+                print()
+                print(dbDataFrame[IDSName])
+
+                try:
+                    ParamterList = dbDataFrame[IDSName]['IDSArg'][str(EntityName).upper()]
+                except:
+                    dbDataFrame[IDSName]['IDSArg'].update({str(EntityName).upper() : []})
+                    ParamterList = dbDataFrame[IDSName]['IDSArg'][str(EntityName).upper()]
+            
+
+                for requ in specification.requirements:
                     
-                    requ.minOccurs = None
-                    requ.maxOccurs = None
+                    if requ.__class__.__name__ == "Attribute":
+                        
+                        requ.minOccurs = None
+                        requ.maxOccurs = None
 
-                    ParamterList.append(f'Ifc{requ.name}')
-                    dbDataFrame[IDSName]['IDSArg'].update({str(appli.name).upper() : ParamterList})
+                        ParamterList.append(f'Ifc{requ.name}')
+                        dbDataFrame[IDSName]['IDSArg'].update({str(EntityName).upper() : ParamterList})
 
-                elif requ.__class__.__name__ == "Property":
+                    elif requ.__class__.__name__ == "Property":
 
-                    RevitParameterMappingDataFrame = SetUpIDSPropertySetDefinition(RevitParameterMappingDataFrame, appli.name, requ)
-                    
+                        RevitParameterMappingDataFrame = SetUpIDSPropertySetDefinition(RevitParameterMappingDataFrame, EntityList, requ)
+                        
 
-                elif requ.__class__.__name__ == "Classification":
-                    print('Requirement is at Facet Classification, Importing ist in Procress')
-
-
-                elif requ.__class__.__name__ == "Parts":
-                    print('Requirement is at Facet Parts, Importing ist in Procress')
+                    elif requ.__class__.__name__ == "Classification":
+                        print('Requirement is at Facet Classification, Importing ist in Procress')
 
 
-                elif requ.__class__.__name__ == "Material":
-                    print('Requirement is at Facet Parts, Importing ist in Procress')
+                    elif requ.__class__.__name__ == "Parts":
+                        print('Requirement is at Facet Parts, Importing ist in Procress')
+
+
+                    elif requ.__class__.__name__ == "Material":
+                        print('Requirement is at Facet Parts, Importing ist in Procress')
             
                                     
                 
