@@ -29,6 +29,46 @@ app = __revit__.Application
 
 output = script.get_output()
 ##############################################################################
+class FamilyOption(IFamilyLoadOptions):
+    def OnFamilyFound(self, familyInUse, overwriteParameterValues):
+        overwriteParameterValues = True
+        return True
+
+    def OnSharedFamilyFound(self, sharedFamily, familyInUse, source, overwriteParameterValues):
+        return True
+    
+
+class GetFamily():
+    def __init__(self, doc, IRTypeName):
+        self.IRTypeName = IRTypeName
+        self.familyDoc = None
+        self.famMan = None
+               
+        # Erstellen eines collectors alle Familien
+        collector = FilteredElementCollector(doc)
+        collector.OfClass(Family)
+        
+        #Alle Elemente der Familien
+        families = collector.ToElements()
+        for family in families:
+            # print(family.Name)
+            # if family.Name == "Pumpe allgemein - Gewinde":
+            #     print(family)
+            #     print(family.GetFamilySymbolIds())
+            for id in family.GetFamilySymbolIds():
+                ElementId = doc.GetElement(id)
+                try:
+                    IfcTypeName = ElementId.LookupParameter('Export Type to IFC As').AsString()
+                except:
+                    pass
+      
+                #Pruefen ob der Export Typ to IFC der IFcEntitaet welche in der IR gefordert wird entspricht
+                #ToDo: Spaeter zu einer Liste umbauen, um alle Familien zu finden nicht nur die erste
+                if IfcTypeName != None and IfcTypeName.upper().encode('utf-8') == self.IRTypeName:
+                    self.familyDoc = doc.EditFamily(family)
+                    if self.familyDoc.IsFamilyDocument:
+                        self.famMan = self.familyDoc.FamilyManager
+                        print('Is FamilyDoc', self.famMan)
 
 def getImportedIDS():
     directory = 'C:\\temp\\revit'
@@ -115,7 +155,8 @@ def GetBuiltInCatecory(RevitCatecoryName):
 
 
 def ParamterBindungToBuiltInCategory(app, doc, spFile, builtinCategory, paramterGroupName, ParameterName, ParamterDataType, tooltip):
-    
+    t = Transaction(doc, str("Add Parameters from IDS to Categories : {}").format(ParameterName ))
+    t.Start()
     # Get the BindingMap of the current document
     BindingMap = doc.ParameterBindings
     print(str("bindung_map : ") +  str(BindingMap))
@@ -196,6 +237,8 @@ def ParamterBindungToBuiltInCategory(app, doc, spFile, builtinCategory, paramter
         # Bind the definitions to the document
         instance_bind_ok = BindingMap.Insert(MyDefinitionProductDate,
                                             InstanceBinding, BuiltInParameterGroup.PG_IFC)
+        #End Transaction:               
+        t.Commit()
         
     
         print(str("\tinstance_bind_ok binded to the document: ") + ' ' + str( instance_bind_ok) +  '( ' + str( MyCategory.Name ) + ' : ' + str(MyDefinitionProductDate.Name) +  ' )' )
@@ -203,10 +246,76 @@ def ParamterBindungToBuiltInCategory(app, doc, spFile, builtinCategory, paramter
 
     return instance_bind_ok
 
+
+def CreatFamilyParameter(familyDoc, famMan, myFamParameter, paramterGroupName, paramterDataType):
+    t = Transaction(familyDoc, "CreatFamilyParameter")
+    t.Start()
+
+
+    #Oeffnen des ScheredParamter Files
+    spFile = app.OpenSharedParameterFile()
+    myGroups = spFile.Groups
+
+    
+    #Pruefen ob die Gruppe beretis vorhanden ist oder nicht, anosten neu anlegen
+    allGroups = {}
+    for group in myGroups:
+        allGroups[group.Name] = group
+
+    if paramterGroupName not in allGroups:
+        myGroup = myGroups.Create(paramterGroupName)
+        print(str("     Group created:  ") + str(myGroup.Name))
+
+    else:
+        myGroup = allGroups[paramterGroupName]
+        print(str("     Group alread exist: ") +  str(myGroup.Name))
+
+
+    #Pruefen ob der Parameter beretis vorhanden ist oder nicht, anosten neu anlegen
+    AllFamParamters = {}
+    for parameter in myGroup.Definitions:
+        AllFamParamters[parameter.Name] = parameter
+
+    if myFamParameter  not in AllFamParamters:
+        option = ExternalDefinitionCreationOptions(myFamParameter, paramterDataType)
+        MyDefinitionProductDate = myGroup.Definitions.Create(option)
+
+        MyExternalDefintion = myGroup.Definitions.get_Item(myFamParameter) 
+        print(str("Family Parmeter neu in SharedParamterfile angelegt: ") +  str(myFamParameter))
+    
+        #Pruefen ob eine externe Definition erstellt werden konnte
+        if MyExternalDefintion != None:
+            famMan.AddParameter(MyExternalDefintion, BuiltInParameterGroup.PG_IFC, False)
+
+            #End Transaction:               
+            t.Commit()
+            print(str("Family Parmeter neu erstellt: ") +  str(myFamParameter))
+            # Laden der geaenderten Familie in das Projektdokument
+            familyDoc.LoadFamily(doc, FamilyOption())
+            familyDoc.Close(True)  
+            print(str("FamilyDoc ist gespeichert und neu geladen: ") +  str(familyDoc))
+            return True
+        
+        else:
+            print('MyExternalDefintion kann nicht Null sein')
+            t.RollBack()
+            return False
+        
+    else:
+        MyExternalDefintion = AllFamParamters[myFamParameter]
+        famMan.AddParameter(MyExternalDefintion, BuiltInParameterGroup.PG_IFC, False)
+        t.Commit()
+        familyDoc.LoadFamily(doc, FamilyOption())
+        familyDoc.Close(True)  
+        print(str("Family Parmeter ist in SharedPArameterfile bestehend: ") +  str(myFamParameter))
+        
+        return True
+
+
 ##############################################################################
 ##############################################################################
 
-IDSName = forms.CommandSwitchWindow.show(getImportedIDS(),  message='IDS Auswählen um dessen Parameter anzulegen')
+IDSName = forms.CommandSwitchWindow.show(getImportedIDS(),  message='IDS Auswaehlen um dessen Parameter anzulegen')
 # IDSName = 'IDS'
 #handeling db
 ProjectFilePath = 'C:\\temp\\revit'
@@ -236,7 +345,7 @@ RevitParameterMappingDataFrame = list( csv.reader(open(str(IDSPropertySetDefined
 ##Spezifikationen zum Anlegen der Revit Parameter
 spFile   = app.OpenSharedParameterFile()
 paramterGroupName = str("IR-FM_fromIDS_") + str(IDSName)
-paramter_DataType = SpecTypeId.String.Text
+paramterDataType = SpecTypeId.String.Text
 tooltip ="Tag: IDS, Description: Parameter Creadet from IDS Requirement"
 ####
 
@@ -244,13 +353,16 @@ tooltip ="Tag: IDS, Description: Parameter Creadet from IDS Requirement"
 ##############################################################################
 
 CreatMapping(RevitParameterMappingDataFrame)
-CreatViewforIR(IDSName)
-
+try:
+    CreatViewforIR(IDSName)
+    print(str('Ansicht {} neu erstellt').format(IDSName))
+except:
+    print('Ansicht existiert bereits')
 ##__MAIN__##
 print()
 # Start Transaction:
-t = Transaction(doc, "Add Parameters from IDS to Categories")
-t.Start()
+# t = Transaction(doc, "Add Parameters from IDS to Categories")
+# t.Start()
 
 print('## IDSArg Keys')
 print(dbDataFrame[IDSName]['IDSArg'].keys())
@@ -260,17 +372,29 @@ print('\n## Verarbeite Attribute')
 for entity in dbDataFrame[IDSName]['IDSArg'].keys():
 
     if entity.upper().encode('utf-8') in dbDataFrame[IDSName]['IfcMapping']:
-        IfcEentity = entity.upper().encode('utf-8')
-        RevitCatecories = dbDataFrame[IDSName]['IfcMapping'][entity.upper().encode('utf-8')]
+        if entity.upper().encode('utf-8').endswith('TYPE'):
+            print('Creat new Family Parameter')
+            MyFamily = GetFamily(doc, entity.upper().encode('utf-8'))
+            print(MyFamily.familyDoc)
 
-        for attribut in dbDataFrame[IDSName]['IDSArg'][entity]:
-            RevitParamter = attribut
+            for attribut in dbDataFrame[IDSName]['IDSArg'][entity]:
+                myFamParameter = attribut
+                CreatFamilyParameter(MyFamily.familyDoc, MyFamily.famMan, myFamParameter, paramterGroupName, paramterDataType)
 
-            for RevitCatecoryName in RevitCatecories:
-                if len(RevitCatecoryName.split('\t')) == 1:
-                    print(str('\n') + str(RevitCatecoryName))
-                    builtInCategory = GetBuiltInCatecory(RevitCatecoryName)
-                    ParamterBindungToBuiltInCategory(app, doc, spFile, builtInCategory, paramterGroupName, RevitParamter, paramter_DataType, tooltip)
+
+        else:
+
+            IfcEentity = entity.upper().encode('utf-8')
+            RevitCatecories = dbDataFrame[IDSName]['IfcMapping'][entity.upper().encode('utf-8')]
+
+            for attribut in dbDataFrame[IDSName]['IDSArg'][entity]:
+                RevitParamter = attribut
+
+                for RevitCatecoryName in RevitCatecories:
+                    if len(RevitCatecoryName.split('\t')) == 1:
+                        print(str('\n') + str(RevitCatecoryName))
+                        builtInCategory = GetBuiltInCatecory(RevitCatecoryName)
+                        ParamterBindungToBuiltInCategory(app, doc, spFile, builtInCategory, paramterGroupName, RevitParamter, paramterDataType, tooltip)
                 
 
 
@@ -279,8 +403,13 @@ pos = 0
 for line in RevitParameterMappingDataFrame:
 
     if line[0] == 'PropertySet:':
+        if line[3].startswith('['):
+            line3 = line[3][2:-2].split(',')
 
-        for entity in line[3].split(','):
+        else:
+            line3 = line[3].split(',')
+
+        for entity in line3:
             print(entity)
             if entity.upper().encode('utf-8') in dbDataFrame[IDSName]['IfcMapping']:
                 IfcEentity = entity.upper().encode('utf-8')
@@ -298,21 +427,35 @@ for line in RevitParameterMappingDataFrame:
                         else:
                             RevitParamter = str(subline[1]).encode('utf-8')
 
- 
-                        for RevitCatecoryName in RevitCatecories:
-                            if len(RevitCatecoryName.split('\t')) == 1:
-                                print(str('\n') + str(RevitCatecoryName) + ' :  ' + str(RevitParamter))
-                                builtInCategory = GetBuiltInCatecory(RevitCatecoryName)
-                                ParamterBindungToBuiltInCategory(app, doc, spFile, builtInCategory, paramterGroupName, RevitParamter, paramter_DataType, tooltip)
+                        if len(RevitCatecories) == 0:
+                            if entity.upper().encode('utf-8').endswith('TYPE'):
+                                print('Creat new Family Parameter')
+                                myFamParameter = RevitParamter
+                                MyFamily = GetFamily(doc, entity.upper().encode('utf-8'))
+                                print(MyFamily.familyDoc, MyFamily.famMan, myFamParameter)
+                                CreatFamilyParameter(MyFamily.familyDoc, MyFamily.famMan, myFamParameter, paramterGroupName, paramterDataType)
+              
+
+                            else:
+                                print('kein Mapping vorhandne, pruefen Sie das IDS und die Revit Mappingkonfiguration')
+                        
+                        else:
+                            for RevitCatecoryName in RevitCatecories:
+                                                    
+                                if len(RevitCatecoryName.split('\t')) == 1:
+                                    print(str('\n') + str(RevitCatecoryName) + ' :  ' + str(RevitParamter))
+
+                                    builtInCategory = GetBuiltInCatecory(RevitCatecoryName)
+                                    ParamterBindungToBuiltInCategory(app, doc, spFile, builtInCategory, paramterGroupName, RevitParamter, paramterDataType, tooltip)
 
                     else:
                         break
 
 
     pos = pos + 1
-                   
+              
 # End Transaction:
-t.Commit()
+# t.Commit()
 
 ##############################################################################
 

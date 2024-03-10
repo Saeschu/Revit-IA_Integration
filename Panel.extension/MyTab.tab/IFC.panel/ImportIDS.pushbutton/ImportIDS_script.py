@@ -21,9 +21,9 @@ from lib.getRevitCategoryFromIFCmapping import getRevitCategoryFromIFCmapping
 from lib.getInstanceListe import getInstanceListe
 
 # Application Members von/für Revit
-# doc = __revit__.ActiveUIDocument.Document
-# uidoc = __revit__.ActiveUIDocument
-# app = __revit__.Application
+doc = __revit__.ActiveUIDocument.Document
+uidoc = __revit__.ActiveUIDocument
+app = __revit__.Application
 ##############################################################################
 # Legt fest ob bei Abstrakten Klassen die Kindelemente gesucht und auf Categorien überführt werden
 IncludeAbstractEntity = True
@@ -62,8 +62,9 @@ else:
 print(idsPath)
 
 my_ids = ifctester.open(idsPath)
-print(f'65: {my_ids.info["title"]} ({my_ids.info["version"]}) has been loaded\n')
-IfcSchema = ifcopenshell.schema_by_name(schema= my_ids.info["version"], schema_version=None)
+# print(f'65: {my_ids.info["title"]} ({my_ids.info["ifcVersion"]}) has been loaded\n')
+# IfcSchema = ifcopenshell.schema_by_name(schema= my_ids.info["ifcVersion"], schema_version=None)
+IfcSchema = ifcopenshell.schema_by_name('IFC4')
 
 #oeffne RevitIfcMappingFile
 IfcCategoryMappingFile = open(RevitIfcMappingFile, 'r', encoding="utf-16").readlines()

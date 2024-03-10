@@ -49,6 +49,7 @@ with open(ConfigPath) as ConfigFile:
 RevitParameterMappingDataFrame = list( csv.reader(open(str(IDSPropertySetDefinedFolderPath) + str('\\') + str(IDSPropertySetDefinedFileName) + str('.txt'), 'r'), delimiter='\t')  )
 
 ##############################################################################
+
 def getImportedIDS():
     directory = 'C:\\temp\\revit'
     ImportedIDS = []
@@ -226,96 +227,126 @@ def forSetUpnewParamter(Parameter, BuiltInCategory):
 
 if config['IsIDSChecking'] == True:
 
-    if len(EXEC_PARAMS.event_args.GetModifiedElementIds()) > 0:
+    if len(EXEC_PARAMS.event_args.GetModifiedElementIds()) > 0 and config['IsIDSChecking'] == True:
         print(20*'-')
-
+        print(EXEC_PARAMS.event_args.GetTransactionNames()) 
         for elementId in EXEC_PARAMS.event_args.GetModifiedElementIds():
             
             doc = EXEC_PARAMS.event_args.GetDocument()
+            cat = None           
             element= doc.GetElement(elementId)
-            cat = element.Category.Name
 
-            if config['IsIDSChecking'] == True and cat != 'Schedules':
-                print(30*'-')
-                print(str('## element.Category.Name: "') + str(cat) + str('" get Checked'))
-                print(30*'-')
-                
-                with open(dbPath) as file:
-                    dbDataFrame = json.load(file)
+            if EXEC_PARAMS.event_args.GetTransactionNames()[0] == 'Modify element attributes':
+                cat = element.Category.Name
 
-                for IDSName in getImportedIDS():
-                    print(str('\n### ') + str(IDSName) + ' ###')
-                    idsxml = f'C:\\temp\\revit\\{IDSName}.xml'
-                        
-                    with open(dbPath) as file:
-                            dbDataFrame = json.load(file)
-                            
+                if cat != None and cat != 'Schedules':
+                    print(30*'-')
+                    print(str('## element.Category.Name: "') + str(cat) + str('" get Checked'))
+                    print(30*'-')
                     
-                    #Ist die Category teil der Anforderung
-                    for Entity in dbDataFrame[IDSName]['IfcMapping']:
-                        if str(cat) in dbDataFrame[IDSName]['IfcMapping'][Entity]:
+                    with open(dbPath) as file:
+                        dbDataFrame = json.load(file)
 
-                            print(f'## IfcMapping of Entity: {Entity}')
-                            print(dbDataFrame[IDSName]['IfcMapping'][Entity])
-                            print('##')
-
-                            my_ids = ifctester.open(idsxml)
-                            
-                            #Specifications
-                            for specification in my_ids.specifications:
+                    for IDSName in getImportedIDS():
+                        if IDSName in dbDataFrame:
+                            print(str('\n### ') + str(IDSName) + ' ###')
+                            idsxml = f'C:\\temp\\revit\\{IDSName}.xml'
                                 
-                                #Applicability 
-                                for appli in specification.applicability:
-                                    #ToDo Bedingung für Kardinalität applicabilty definieren
-                                    #ToDo Regel einbauen, dass mehrer Appli kombiniert als Schnittmenge gelten, nur Prüfen wenn alle appli erfüllt sind
-                                    print(appli.get_usage())
-                                    print(len(appli))
+                            with open(dbPath) as file:
+                                    dbDataFrame = json.load(file)
                                     
-                                    if appli.__class__.__name__ == 'Entity':
+                            
+                            #Ist die Category teil der Anforderung
+                            for Entity in dbDataFrame[IDSName]['IfcMapping']:
+                                if str(cat) in dbDataFrame[IDSName]['IfcMapping'][Entity]:
 
-                                            appliName = appli.name
+                                    print(f'## IfcMapping of Entity: {Entity}')
+                                    print(dbDataFrame[IDSName]['IfcMapping'][Entity])
+                                    print('##')
 
-                                            if str(appliName).upper() == str(Entity).upper():
-                                                print(f'{str(appliName).upper()} = {str(Entity).upper()}')
-
-                                                
-                                                for requ in specification.requirements:
-                                                    print(10*'-')
-                                                    checkRequirements(element, requ)
-
-
-                                    elif appli.__class__.__name__ == 'Attribute':
-                                        for parameter in element.Parameters:
-                        
-                                            if str(parameter.Definition.Name).upper() == str(f'Ifc{appli.name}').upper():
-                                                
-                                                chekingParamters(specification)        
-
-                                    elif appli.__class__.__name__ == 'Property':
-                                        for parameter in element.Parameters:
-                        
-                                            if str(parameter.Definition.Name).upper() == str(appli.name).upper:
-                                                
-                                                chekingParamters(specification)
+                                    my_ids = ifctester.open(idsxml)
+                                    
+                                    #Specifications
+                                    for specification in my_ids.specifications:
                                         
-                                    elif appli.__class__.__name__ == 'Classification':
-                                        for parameter in element.Parameters:
-                        
-                                            if str(parameter.Definition.Name).upper() == str('Classification.Space.Number').upper():
+                                        #Applicability 
+                                        for appli in specification.applicability:
+                                            #ToDo Bedingung für Kardinalität applicabilty definieren
+                                            #ToDo Regel einbauen, dass mehrer Appli kombiniert als Schnittmenge gelten, nur Prüfen wenn alle appli erfüllt sind
+                                            # print(appli.get_usage())
+                                            # print(len(appli))
+                                            
+                                            if appli.__class__.__name__ == 'Entity':
+
+                                                    appliName = appli.name
+
+                                                    if str(appliName).upper() == str(Entity).upper():
+                                                        print(f'{str(appliName).upper()} = {str(Entity).upper()}')
+
+                                                        
+                                                        for requ in specification.requirements:
+                                                            print(10*'-')
+                                                            checkRequirements(element, requ)
+
+
+                                            elif appli.__class__.__name__ == 'Attribute':
+                                                for parameter in element.Parameters:
+                                
+                                                    if str(parameter.Definition.Name).upper() == str(f'Ifc{appli.name}').upper():
+                                                        
+                                                        chekingParamters(specification)        
+
+                                            elif appli.__class__.__name__ == 'Property':
+                                                for parameter in element.Parameters:
+                                
+                                                    if str(parameter.Definition.Name).upper() == str(appli.name).upper:
+                                                        
+                                                        chekingParamters(specification)
                                                 
-                                                chekingParamters(specification)
+                                            elif appli.__class__.__name__ == 'Classification':
+                                                for parameter in element.Parameters:
+                                
+                                                    if str(parameter.Definition.Name).upper() == str('Classification.Space.Number').upper():
+                                                        
+                                                        chekingParamters(specification)
 
 
-                                    elif appli.__class__.__name__ == 'Parts':
-                                        # LevelId: Ebene 0, ID24770
-                                        # GetDependentElements (ElementFilter): List<ElementId>
-                                        print('Applicability is at Facet Parts, Checking is in procress')        
-                                    
-                                    elif appli.__class__.__name__ == 'Material':
-                                        # GetMaterialIds (Boolean): ICollection<ElementId>
-                                        print('Applicability is at Facet Material, Checking is in procress')  
+                                            elif appli.__class__.__name__ == 'Parts':
+                                                # LevelId: Ebene 0, ID24770
+                                                # GetDependentElements (ElementFilter): List<ElementId>
+                                                print('Applicability is at Facet Parts, Checking is in procress')        
+                                            
+                                            elif appli.__class__.__name__ == 'Material':
+                                                # GetMaterialIds (Boolean): ICollection<ElementId>
+                                                print('Applicability is at Facet Material, Checking is in procress')  
 
-                            # print(f'Applicability  {appli.name} - Requirement {requ.__class__.__name__}, {requ.name} : {requ.value} , {type(requ.value)}')
+                                    # print(f'Applicability  {appli.name} - Requirement {requ.__class__.__name__}, {requ.name} : {requ.value} , {type(requ.value)}')
+
+            elif EXEC_PARAMS.event_args.GetTransactionNames()[0] == 'Modify type attributes':
+                try:
+                    if element.FamilyName != None:
+                        print('### Testsession ###')
+                        print(elementId)
+                        print(doc)
+                        print(element.FamilyName)
+                        print(element.Category)
+
+                        TypeValue = element.LookupParameter('IsExternal').AsString()
+                        print(TypeValue)
+
+                except:
+                    'ist keine Familie'
+
+                
+
+                # if str(element) == "Autodesk.Revit.DB.FamilySymbol":
+                #     print('now its a string')
+                   
+
+
+
+            else:
+                'no matching config found'
 
         print(10*'-') 
         print(20*'-') 
