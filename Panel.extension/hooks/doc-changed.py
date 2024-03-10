@@ -28,27 +28,27 @@ from System import Enum
 
 # sys.path.append( '/Pnale.extenstion/lib')
 # from mymodule import get_RevitElementFromIFCmapping 
-     
+
 ##############################################################################
-### Variables -> muss neu über die Liste aller importierten IDS iteriert werden
-IDSName = "IDS"
 
 # ConfigPath = "C:\\temp\\revit\\IsIDSChecking.json"
 ConfigPath = "C:\\Users\\Sascha Hostettler\\Documents\\GitHub\\pyRevit-IDS_bSDD\\Revit-IA_Integration\\Panel.extension\\lib\\config.json"
 
 dbPath = 'C:\\temp\\revit\\db.json'
 
-IDSPropertySetDefinedFolderPath = "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\IFC 2021.bundle\\Contents\\2021"
-IDSPropertySetDefinedFileName = str('IDSPropertySetDefined_') + str(IDSName)
-
-
 with open(ConfigPath) as ConfigFile:
     config = json.load(ConfigFile)
 
 
-RevitParameterMappingDataFrame = list( csv.reader(open(str(IDSPropertySetDefinedFolderPath) + str('\\') + str(IDSPropertySetDefinedFileName) + str('.txt'), 'r'), delimiter='\t')  )
 
 ##############################################################################
+
+def getRevitParameterMappingDataFrame(IDSName):
+    IDSPropertySetDefinedFolderPath = "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\IFC 2021.bundle\\Contents\\2021"
+    IDSPropertySetDefinedFileName = str('IDSPropertySetDefined_') + str(IDSName)
+    RevitParameterMappingDataFrame = list( csv.reader(open(str(IDSPropertySetDefinedFolderPath) + str('\\') + str(IDSPropertySetDefinedFileName) + str('.txt'), 'r'), delimiter='\t')  )
+
+    return RevitParameterMappingDataFrame
 
 def getImportedIDS():
     directory = 'C:\\temp\\revit'
@@ -83,11 +83,11 @@ def getRevitParameterName(IfcPropertyName, RevitParameterMappingDataFrame):
             RevitName = line[3]
 
             if IfcName == IfcPropertyName and RevitName != '':
-                # print('getRevitParameterName ', IfcPropertyName, ' -> ',  MappedRevitParameterName)
+                # print('getRevitParameterName ', IfcPropertyName, ' -> ',  IfcName)
                 return RevitName
             
             elif IfcName == IfcPropertyName and RevitName == '':
-                # print('getRevitParameterName ', IfcPropertyName, ' -> ', MappedIfcPropertyName)
+                # print('getRevitParameterName ', IfcPropertyName, ' -> ', IfcName)
                 return IfcName   
 
 #Check Requirements
@@ -128,11 +128,11 @@ def checkRequirementValue(requ, ParameterName, ParameterValue):
 
 
 #Requirements Facet
-def checkRequirements(element, requ):
+def checkRequirements(RevitElement, requ):
     if requ.__class__.__name__ == "Attribute":
         
         try:
-            RevitParameter = element.LookupParameter(f'Ifc{requ.name}')
+            RevitParameter = RevitElement.LookupParameter(f'Ifc{requ.name}')
             RevitParameterName = f'Ifc{requ.name}' #Revit_parameter.Name
             Revit_parameterValue = RevitParameter.AsValueString()
         except:
@@ -153,7 +153,7 @@ def checkRequirements(element, requ):
     elif requ.__class__.__name__ == "Property":
         try:
             RevitParameterName = getRevitParameterName(requ.name, RevitParameterMappingDataFrame)          
-            RevitParameter = element.LookupParameter(RevitParameterName)
+            RevitParameter = RevitElement.LookupParameter(RevitParameterName)
             Revit_parameterValue = RevitParameter.AsValueString()
         except:
             print(f'Gefordertes Parameter "{RevitParameterName}" ist nicht vorhanden')
@@ -172,7 +172,7 @@ def checkRequirements(element, requ):
 
     elif requ.__class__.__name__ == "Classification":
         try:      
-            RevitParameter = element.LookupParameter('Classification.Space.Number')
+            RevitParameter = RevitElement.LookupParameter('Classification.Space.Number')
             RevitParameterName = requ.system
             Revit_parameterValue = RevitParameter.AsValueString()
         except:
@@ -194,7 +194,6 @@ def checkRequirements(element, requ):
         print(' Requirement is at Facet Material, Checking is in procress')
 
 
-
 def chekingParamters(specification):
     print('\n')
     print(20*'-')
@@ -204,9 +203,10 @@ def chekingParamters(specification):
     for requ in specification.requirements:
         print(10*'-')
         try:
-            checkRequirements(element, requ)
+            checkRequirements(RevitElement, requ)
         except:
             print(f'Gefordertes Attribut "{requ.name}" ist nicht vorhanden')
+
 
 def forSetUpnewParamter(Parameter, BuiltInCategory):
     print('forSetUpnewParamter')
@@ -222,6 +222,66 @@ def forSetUpnewParamter(Parameter, BuiltInCategory):
     file.write(jsonString)
     file.close()
 
+
+
+def IrChecking(idsXml, IfcEntity, RevitElement):
+    MyIds = ifctester.open(idsXml)
+                                    
+    #Specifications
+    for specification in MyIds.specifications:
+        
+        #Applicability 
+        for appli in specification.applicability:
+            #ToDo Bedingung für Kardinalität applicabilty definieren
+            #ToDo Regel einbauen, dass mehrer Appli kombiniert als Schnittmenge gelten, nur Prüfen wenn alle appli erfüllt sind
+            # print(appli.get_usage())
+            # print(len(appli))
+            
+            if appli.__class__.__name__ == 'Entity':
+
+                    appliName = appli.name
+
+                    if str(appliName).upper() == str(IfcEntity).upper():
+                        print(f'{str(appliName).upper()} = {str(IfcEntity).upper()}')
+
+                        for requ in specification.requirements:
+                            print(10*'-')
+                            checkRequirements(RevitElement, requ)
+
+
+            elif appli.__class__.__name__ == 'Attribute':
+                for parameter in RevitElement.Parameters:
+
+                    if str(parameter.Definition.Name).upper() == str(f'Ifc{appli.name}').upper():
+                        
+                        chekingParamters(specification)        
+
+            elif appli.__class__.__name__ == 'Property':
+                for parameter in RevitElement.Parameters:
+
+                    if str(parameter.Definition.Name).upper() == str(appli.name).upper:
+                        
+                        chekingParamters(specification)
+                
+            elif appli.__class__.__name__ == 'Classification':
+                for parameter in RevitElement.Parameters:
+
+                    if str(parameter.Definition.Name).upper() == str('Classification.Space.Number').upper():
+                        
+                        chekingParamters(specification)
+
+
+            elif appli.__class__.__name__ == 'Parts':
+                # LevelId: Ebene 0, ID24770
+                # GetDependentElements (ElementFilter): List<ElementId>
+                print('Applicability is at Facet Parts, Checking is in procress')        
+            
+            elif appli.__class__.__name__ == 'Material':
+                # GetMaterialIds (Boolean): ICollection<ElementId>
+                print('Applicability is at Facet Material, Checking is in procress')  
+
+    # print(f'Applicability  {appli.name} - Requirement {requ.__class__.__name__}, {requ.name} : {requ.value} , {type(requ.value)}')
+
 ##############################################################################
 ##### __MAIN__ #####
 
@@ -230,123 +290,62 @@ if config['IsIDSChecking'] == True:
     if len(EXEC_PARAMS.event_args.GetModifiedElementIds()) > 0 and config['IsIDSChecking'] == True:
         print(20*'-')
         print(EXEC_PARAMS.event_args.GetTransactionNames()) 
-        for elementId in EXEC_PARAMS.event_args.GetModifiedElementIds():
-            
-            doc = EXEC_PARAMS.event_args.GetDocument()
-            cat = None           
-            element= doc.GetElement(elementId)
+      
+        #oeffnen der db
+        with open(dbPath) as file:
+            dbDataFrame = json.load(file)
 
-            if EXEC_PARAMS.event_args.GetTransactionNames()[0] == 'Modify element attributes':
-                cat = element.Category.Name
+        #Kontrelle der IR fuer jedes importierte IDS
+        for IDSName in getImportedIDS():
+            if IDSName in dbDataFrame:
+                print(str('\n### ') + str(IDSName) + ' ###')
+                idsXml = f'C:\\temp\\revit\\{IDSName}.xml' 
+                RevitParameterMappingDataFrame = getRevitParameterMappingDataFrame(IDSName)
 
-                if cat != None and cat != 'Schedules':
-                    print(30*'-')
-                    print(str('## element.Category.Name: "') + str(cat) + str('" get Checked'))
-                    print(30*'-')
+                #Kontrolle aller geaenderte Elementen 
+                for elementId in EXEC_PARAMS.event_args.GetModifiedElementIds():
+
+                    doc = EXEC_PARAMS.event_args.GetDocument()
+                    cat = None           
+                    RevitElement = doc.GetElement(elementId)
+
+                    if EXEC_PARAMS.event_args.GetTransactionNames()[0] == 'Modify element attributes':
+                        cat = RevitElement.Category.Name
+
+                        if cat != None and cat != 'Schedules':
+                            print(30*'-')
+                            print(str('## element.Category.Name: "') + str(cat) + str('" get Checked'))
+                            print(30*'-')
                     
-                    with open(dbPath) as file:
-                        dbDataFrame = json.load(file)
-
-                    for IDSName in getImportedIDS():
-                        if IDSName in dbDataFrame:
-                            print(str('\n### ') + str(IDSName) + ' ###')
-                            idsxml = f'C:\\temp\\revit\\{IDSName}.xml'
-                                
-                            with open(dbPath) as file:
-                                    dbDataFrame = json.load(file)
-                                    
                             
                             #Ist die Category teil der Anforderung
-                            for Entity in dbDataFrame[IDSName]['IfcMapping']:
-                                if str(cat) in dbDataFrame[IDSName]['IfcMapping'][Entity]:
+                            for IfcEntity in dbDataFrame[IDSName]['IfcMapping']:
+                                if str(cat) in dbDataFrame[IDSName]['IfcMapping'][IfcEntity]:
 
-                                    print(f'## IfcMapping of Entity: {Entity}')
-                                    print(dbDataFrame[IDSName]['IfcMapping'][Entity])
+                                    print(f'## IfcMapping of Entity: {IfcEntity}')
+                                    print(dbDataFrame[IDSName]['IfcMapping'][IfcEntity])
                                     print('##')
 
-                                    my_ids = ifctester.open(idsxml)
-                                    
-                                    #Specifications
-                                    for specification in my_ids.specifications:
-                                        
-                                        #Applicability 
-                                        for appli in specification.applicability:
-                                            #ToDo Bedingung für Kardinalität applicabilty definieren
-                                            #ToDo Regel einbauen, dass mehrer Appli kombiniert als Schnittmenge gelten, nur Prüfen wenn alle appli erfüllt sind
-                                            # print(appli.get_usage())
-                                            # print(len(appli))
-                                            
-                                            if appli.__class__.__name__ == 'Entity':
+                                    IrChecking(idsXml, IfcEntity, RevitElement)
 
-                                                    appliName = appli.name
+                                   
+                    elif EXEC_PARAMS.event_args.GetTransactionNames()[0] == 'Modify type attributes':
 
-                                                    if str(appliName).upper() == str(Entity).upper():
-                                                        print(f'{str(appliName).upper()} = {str(Entity).upper()}')
+                        try:
+                            if RevitElement.FamilyName != None:
+                               
+                                IfcEntity = RevitElement.LookupParameter('Export Type to IFC As').AsString()
+                                print(f'## IfcMapping of Type Entity: {IfcEntity}')
+                                print(f'## Revit Element of Type : {RevitElement}')
+                                print('##')
 
-                                                        
-                                                        for requ in specification.requirements:
-                                                            print(10*'-')
-                                                            checkRequirements(element, requ)
+                                IrChecking(idsXml, IfcEntity, RevitElement)
 
-
-                                            elif appli.__class__.__name__ == 'Attribute':
-                                                for parameter in element.Parameters:
-                                
-                                                    if str(parameter.Definition.Name).upper() == str(f'Ifc{appli.name}').upper():
-                                                        
-                                                        chekingParamters(specification)        
-
-                                            elif appli.__class__.__name__ == 'Property':
-                                                for parameter in element.Parameters:
-                                
-                                                    if str(parameter.Definition.Name).upper() == str(appli.name).upper:
-                                                        
-                                                        chekingParamters(specification)
-                                                
-                                            elif appli.__class__.__name__ == 'Classification':
-                                                for parameter in element.Parameters:
-                                
-                                                    if str(parameter.Definition.Name).upper() == str('Classification.Space.Number').upper():
-                                                        
-                                                        chekingParamters(specification)
-
-
-                                            elif appli.__class__.__name__ == 'Parts':
-                                                # LevelId: Ebene 0, ID24770
-                                                # GetDependentElements (ElementFilter): List<ElementId>
-                                                print('Applicability is at Facet Parts, Checking is in procress')        
-                                            
-                                            elif appli.__class__.__name__ == 'Material':
-                                                # GetMaterialIds (Boolean): ICollection<ElementId>
-                                                print('Applicability is at Facet Material, Checking is in procress')  
-
-                                    # print(f'Applicability  {appli.name} - Requirement {requ.__class__.__name__}, {requ.name} : {requ.value} , {type(requ.value)}')
-
-            elif EXEC_PARAMS.event_args.GetTransactionNames()[0] == 'Modify type attributes':
-                try:
-                    if element.FamilyName != None:
-                        print('### Testsession ###')
-                        print(elementId)
-                        print(doc)
-                        print(element.FamilyName)
-                        print(element.Category)
-
-                        TypeValue = element.LookupParameter('IsExternal').AsString()
-                        print(TypeValue)
-
-                except:
-                    'ist keine Familie'
-
-                
-
-                # if str(element) == "Autodesk.Revit.DB.FamilySymbol":
-                #     print('now its a string')
-                   
-
-
+                        except:
+                            'ist keine Familie'
 
             else:
-                'no matching config found'
+                'Info 348'
 
         print(10*'-') 
         print(20*'-') 
