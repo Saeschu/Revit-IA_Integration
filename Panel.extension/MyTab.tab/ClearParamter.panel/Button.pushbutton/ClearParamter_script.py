@@ -70,6 +70,35 @@ if IDSName != 'Exit':
     # End Transaction:
     t.Commit()
 
+    print(str('\nDelete all TempFiles, Importet Files'))
+    IdsToDelete = str(config().TempPfad) + '\\' + str(IDSName) + '.xml'
+    if os.path.exists(IdsToDelete):
+        os.remove(IdsToDelete)
+        print('File {}.xml deleted successfully'.format(IDSName))
+    
+
+    RevitParameterMappingFile = 'C:\\ProgramData\\Autodesk\\ApplicationPlugins\\IFC 2021.bundle\\Contents\\2021\\IDSPropertySetDefined_{}.txt'.format(IDSName)
+    if os.path.exists(RevitParameterMappingFile):
+        os.remove(RevitParameterMappingFile)
+        print('Refit Mappingfile IDSPropertySetDefined_{}.txt deleted successfully'.format(IDSName))
+
+
+    dbPath = 'C:\\temp\\revit\\db.json'
+
+            
+    ProjectFilePath = 'C:\\temp\\revit'
+    dbJsonFile = '{}\\db.json'.format(ProjectFilePath)
+    dbJsonObject = open(dbJsonFile, "r")
+    dbDataFrame = json.load(dbJsonObject)
+
+    dbDataFrame.pop(IDSName)
+
+    dbJsonObject = open(dbJsonFile, "w")
+    jsonString = json.dumps(dbDataFrame)
+    dbJsonObject.write(jsonString)
+    dbJsonObject.close()            
+    
+
     # ##############################################################################
     print("Endo of Code")
 
