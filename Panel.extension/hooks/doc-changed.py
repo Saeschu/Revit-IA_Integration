@@ -64,10 +64,6 @@ class Classification():
             self.Title = None
 
 
-
-
-
-
 def getRevitParameterMappingDataFrame(IDSName):
     IDSPropertySetDefinedFolderPath = "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\IFC 2021.bundle\\Contents\\2021"
     IDSPropertySetDefinedFileName = str('IDSPropertySetDefined_') + str(IDSName)
@@ -217,20 +213,54 @@ def checkRequirements(RevitElement, requ):
         if requ.minOccurs == 1 and requ.system not in AllClassSystems:
             print(f'Gefordertes Klassifikationssystem "{requ.system}" ist nicht vorhanden') 
 
-                
-
-                   
-
-
+       
     elif requ.__class__.__name__ == "Parts":
-        print(' Requirement is at Facet Parts, Checking is in procress')
+        requRelation = requ.relation 
+        requEntity = requ.name
+
+        if requEntity != None:
+            if requEntity == "IfcBuildingStorey" and doc.GetElement(RevitElement.LevelId) == None:
+                    print(f'WARNING :  Categeory muss vorhanden Teil von einer Ebene sein')
+            
+            else:
+                #ToDo: Filtern aller Elemente der RequEntity (ueberfuert auf Kategory) und durchsuchen der DependetElements auf aktuelles Element
+                print(RevitElement.GetDependentElements)
+                # for element in RevitElement.GetDependentElements():
+                    # print(GetCategory(doc, element.Id))
+                
+        if requRelation != None:
+
+            if requRelation == "IFCRELAGGREGATES":
+                if doc.GetElement(RevitElement.LevelId) == None:
+                    f'WARNING :  Categeory muss Teil von einer Ebene sein'
+
+            elif requRelation == "IFCRELASSIGNSTOGROUP":
+                print(f'Pruefung PartOf mit Relation: "{requRelation}" ist noch in arbeit')
+
+            elif requRelation == "IFCRELCONTAINEDINSPATIALSTRUCTURE":
+                print(f'Pruefung PartOf mit Relation: "{requRelation}" ist noch in arbeit')
+
+            elif requRelation == "IFCRELNESTS":
+                print(f'Pruefung PartOf mit Relation: "{requRelation}" ist noch in arbeit')
+
+            elif requRelation == "IFCRELVOIDSELEMENT":
+                print(f'Pruefung PartOf mit Relation: "{requRelation}" ist noch in arbeit')
+
+            elif requRelation == "IFCRELFILLSELEMENT":
+                print(f'Pruefung PartOf mit Relation: "{requRelation}" ist noch in arbeit')
+
+            else:
+                print(f'{requRelation} ist keien gueltige Relation')
+
+        else:
+            print('Invalide Anfordrderung mit PartOf')
 
 
     elif requ.__class__.__name__ == "Material":
-        print(' Requirement is at Facet Material, Checking is in procress')
+                print(' Requirement is at Facet Material, Checking is in procress')
 
 
-def chekingParamters(specification):
+def chekingParameters(specification):
     print('\n')
     print(20*'-')
     print(specification.name)
@@ -290,27 +320,27 @@ def IrChecking(idsXml, IfcEntity, RevitElement):
 
                     if str(parameter.Definition.Name).upper() == str(f'Ifc{appli.name}').upper():
                         
-                        chekingParamters(specification)        
+                        chekingParameters(specification)        
 
             elif appli.__class__.__name__ == 'Property':
                 for parameter in RevitElement.Parameters:
-
-                    if str(parameter.Definition.Name).upper() == str(appli.name).upper:
                         
-                        chekingParamters(specification)
+                    if str(getIfcPropertyName(parameter.Definition.Name, RevitParameterMappingDataFrame)).upper() == str(appli.name).upper:
+                        
+                        chekingParameters(specification)
                 
             elif appli.__class__.__name__ == 'Classification':
                 for parameter in RevitElement.Parameters:
 
-                    if str(parameter.Definition.Name).upper() == str('Classification.Space.Number').upper():
+                    if str(parameter.Definition.Name).startswith('Classification'):
                         
-                        chekingParamters(specification)
+                        chekingParameters(specification)
 
 
             elif appli.__class__.__name__ == 'Parts':
-                # LevelId: Ebene 0, ID24770
-                # GetDependentElements (ElementFilter): List<ElementId>
-                print('Applicability is at Facet Parts, Checking is in procress')        
+                for dependetElement in RevitElement.GetDependentElements():
+                    checkRequirements(dependetElement, requ)
+        
             
             elif appli.__class__.__name__ == 'Material':
                 # GetMaterialIds (Boolean): ICollection<ElementId>
@@ -348,6 +378,7 @@ if config['IsIDSChecking'] == True:
 
                     if EXEC_PARAMS.event_args.GetTransactionNames()[0] == 'Modify element attributes':
                         cat = RevitElement.Category.Name
+
 
                         if cat != None and cat != 'Schedules':
                             print(30*'-')
