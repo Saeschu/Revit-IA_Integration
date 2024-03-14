@@ -42,6 +42,31 @@ with open(ConfigPath) as ConfigFile:
 
 
 ##############################################################################
+class Classification():
+    def __init__(self, ClassValue):
+        self.ClassValue = ClassValue
+        self.parse_input()
+
+    def parse_input(self):
+
+        parts = self.ClassValue.strip('[]').split(':')
+        self.Class = parts[0].split(']')[0]
+
+        if len(parts[0].split(']')) > 1:
+            self.Code = parts[0].split(']')[1]
+
+            if len(parts) > 1:
+                self.Title = parts[1]
+            else:
+                self.Title = None
+        else:
+            self.Code = None
+            self.Title = None
+
+
+
+
+
 
 def getRevitParameterMappingDataFrame(IDSName):
     IDSPropertySetDefinedFolderPath = "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\IFC 2021.bundle\\Contents\\2021"
@@ -171,19 +196,30 @@ def checkRequirements(RevitElement, requ):
 
 
     elif requ.__class__.__name__ == "Classification":
-        try:      
-            RevitParameter = RevitElement.LookupParameter('Classification.Space.Number')
-            RevitParameterName = requ.system
-            Revit_parameterValue = RevitParameter.AsValueString()
-        except:
-            print(f'Gefordertes Parameter "Classification.Space.Number" ist nicht vorhanden')
-            Revit_parameterValue = None
-            # forSetUpnewParamter(Revit_parameterName, element.Category.Name)
+        AllClassSystems = []
+        for parameter in RevitElement.Parameters:
+        # print(parameter)
+            if str(parameter.Definition.Name).startswith('ClassificationCode'):
+                ParameterValue = parameter.AsString()
+                if ParameterValue != None and len(ParameterValue) > 1:
+                    
+                    ClassValue = Classification(ParameterValue)
+                    AllClassSystems.append(ClassValue.Class)
 
-        if Revit_parameterValue != None:
-            checkRequirementValue(requ, RevitParameterName, Revit_parameterValue)
-        elif requ.minOccurs == 1:
-            print(f'WARNING : {RevitParameterName} : Parameterwert muss vorhanden sein')
+                    if ClassValue.Class == requ.system:
+                        if ClassValue.Code != None:
+
+                            checkRequirementValue(requ, ClassValue.Class,  ClassValue.Code)
+
+                        else:
+                            print(f'WARNING : {requ.system} : Code muss vorhanden sein')
+
+        if requ.minOccurs == 1 and requ.system not in AllClassSystems:
+            print(f'Gefordertes Klassifikationssystem "{requ.system}" ist nicht vorhanden') 
+
+                
+
+                   
 
 
     elif requ.__class__.__name__ == "Parts":
