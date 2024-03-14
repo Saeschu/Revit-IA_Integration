@@ -39,7 +39,7 @@ def SetUpIDSPropertySetDefinition(RevitParameterMappingDataFrame, Entity, requ):
 
     for line in RevitParameterMappingDataFrame:
         print(line)
-        if line != '\n' and line[0] == 'PropertySet:':
+        if line != [] and line[0] == 'PropertySet:':
             PropertySetList[line[1]] = line.index(line[1])
             EntityListFromPropertySet[line[1]] = line[2]
             print(EntityListFromPropertySet)

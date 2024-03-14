@@ -51,7 +51,7 @@ def getRequirements(requ, appliName):
     elif requ.__class__.__name__ == "Property":       
         if requ.value != None:                                            
             if requ.get_usage() == 'required':
-                print(f'{requ.name} data shall be {requ.alue} and in the dataset {requ.propertySet}')
+                print(f'{requ.name} data shall be {requ.value} and in the dataset {requ.propertySet}')
 
             elif requ.get_usage() == 'prohibited':
                 print(f'{requ.name} data shall not be {requ.value} and in the dataset {requ.propertySet}')
@@ -103,6 +103,8 @@ with open(ConfigPath) as ConfigFile:
 elementId = uidoc.Selection.GetElementIds()[0].Value
 
 element = doc.GetElement(ElementId(elementId))
+ElementTypeId = element.GetTypeId()
+elementType = doc.GetElement(ElementTypeId)
 cat = element.Category.Name
 ##############################################################################
 
@@ -117,10 +119,8 @@ for IDSName in getImportedIDS():
 
     #Ist die Category teil der Anforderung
     for Entity in dbDataFrame[IDSName]['IfcMapping']:
-        if str(cat).upper() in dbDataFrame[IDSName]['IfcMapping'][Entity]:
-
-        
-
+        if str(cat) in dbDataFrame[IDSName]['IfcMapping'][Entity] or (elementType != None and Entity.encode('utf-8') == str(elementType.LookupParameter('Export Type to IFC As').AsString()).upper().encode('utf-8')):
+        # if str(Entity).encode('utf-8') == str(elementType.LookupParameter('Export Type to IFC As').AsString()).upper().encode('utf-8'):
             #Specifications
             for specification in my_ids.specifications:
                 
@@ -131,7 +131,7 @@ for IDSName in getImportedIDS():
 
                         appliName = appli.name   
                             
-                        if str(appliName).upper() in dbDataFrame[IDSName]['IfcMapping'] and str(cat) in dbDataFrame[IDSName]['IfcMapping'][str(appliName).upper()]:
+                        if (str(appliName).upper() in dbDataFrame[IDSName]['IfcMapping'] and str(cat) in dbDataFrame[IDSName]['IfcMapping'][str(appliName).upper()]) or str(appliName).upper().encode('utf-8') == str(Entity).upper().encode('utf-8'):
 
                             print('\n')
                             print(20*'-')
@@ -191,7 +191,7 @@ for IDSName in getImportedIDS():
             print('\n')
             break
         else:
-            print('Entity ist nicht Teil der geladenen Informationsanforderung')    
+            print(f'Entity: {Entity} ist nicht Teil der geladenen Informationsanforderung')    
 
 
     print(20*'-')

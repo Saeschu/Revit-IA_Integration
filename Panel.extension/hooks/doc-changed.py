@@ -308,6 +308,7 @@ if config['IsIDSChecking'] == True:
                     doc = EXEC_PARAMS.event_args.GetDocument()
                     cat = None           
                     RevitElement = doc.GetElement(elementId)
+                    # RevitElement.GetChangeTypeAny()
 
                     if EXEC_PARAMS.event_args.GetTransactionNames()[0] == 'Modify element attributes':
                         cat = RevitElement.Category.Name

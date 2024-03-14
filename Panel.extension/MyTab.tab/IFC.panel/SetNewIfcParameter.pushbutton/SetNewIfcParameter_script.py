@@ -56,9 +56,9 @@ class GetFamily():
             #     print(family)
             #     print(family.GetFamilySymbolIds())
             for id in family.GetFamilySymbolIds():
-                ElementId = doc.GetElement(id)
+                element = doc.GetElement(id)
                 try:
-                    IfcTypeName = ElementId.LookupParameter('Export Type to IFC As').AsString()
+                    IfcTypeName = element.LookupParameter('Export Type to IFC As').AsString()
                 except:
                     pass
       
@@ -97,10 +97,16 @@ def CreatViewforIR(IDSName):
     if IDSName not in View3DCollector:
         t = Transaction(doc,'Create 3D Isometric')
         t.Start() 
-        view3D = View3D.CreateIsometric(doc, view_type_3D.Id) 
-        view3D.Name = IDSName
-        t.Commit()
-        return True
+        try:
+            view3D = View3D.CreateIsometric(doc, view_type_3D.Id) 
+            view3D.Name = IDSName
+            t.Commit()
+            print(str('Ansicht {} neu erstellt').format(IDSName))
+            return True
+        except:
+            t.RollBack()
+            print('Ansicht existiert bereits')
+            return False   
     
     else:
         return False
@@ -111,10 +117,12 @@ def CreatMapping(RevitParameterMappingDataFrame):
         DataSet = []
 
         for line in RevitParameterMappingDataFrame:
-            if len(line) > 1 and line[0] == 'PropertySet:':
+            print(line)
+            if line != [] and len(line) > 1 and line[0] == 'PropertySet:':
                 print(line[1])
                 for subline in RevitParameterMappingDataFrame:
-                    DataSet.append([line[1], subline[1], subline[3]])
+                    if subline != [] and len(subline) > 1:
+                        DataSet.append([line[1], subline[1], subline[3]])
 
         output.print_table(table_data=DataSet,
                     title="Property Mapping Table",
@@ -125,7 +133,7 @@ def CreatMapping(RevitParameterMappingDataFrame):
     InputMapping = 'None'
     while InputMapping.upper() != 'SAVE':
         for line in RevitParameterMappingDataFrame:
-            if str(line[1]).upper() == InputMapping.split(' ')[0].upper():
+            if line != [] and len(line) > 1 and str(line[1]).upper() == InputMapping.split(' ')[0].upper():
                 line[3] = InputMapping.split(' ')[1]
                 showMapping(RevitParameterMappingDataFrame)
                 break  
@@ -243,8 +251,11 @@ def ParamterBindungToBuiltInCategory(app, doc, spFile, builtinCategory, paramter
     
         print(str("\tinstance_bind_ok binded to the document: ") + ' ' + str( instance_bind_ok) +  '( ' + str( MyCategory.Name ) + ' : ' + str(MyDefinitionProductDate.Name) +  ' )' )
     
-
-    return instance_bind_ok
+        return instance_bind_ok
+    
+    else:
+        t.RollBack()
+        return instance_bind_ok
 
 
 def CreatFamilyParameter(familyDoc, famMan, myFamParameter, paramterGroupName, paramterDataType):
@@ -302,14 +313,15 @@ def CreatFamilyParameter(familyDoc, famMan, myFamParameter, paramterGroupName, p
             return False
         
     else:
-        MyExternalDefintion = AllFamParamters[myFamParameter]
-        famMan.AddParameter(MyExternalDefintion, BuiltInParameterGroup.PG_IFC, False)
-        t.Commit()
-        familyDoc.LoadFamily(doc, FamilyOption())
-        familyDoc.Close(True)  
+
+        # MyExternalDefintion = AllFamParamters[myFamParameter]
+        # famMan.AddParameter(MyExternalDefintion, BuiltInParameterGroup.PG_IFC, False)
+        # t.Commit()
+        # familyDoc.LoadFamily(doc, FamilyOption())
+        # familyDoc.Close(True)  
         print(str("Family Parmeter ist in SharedPArameterfile bestehend: ") +  str(myFamParameter))
-        
-        return True
+        t.RollBack()
+        return False
 
 
 ##############################################################################
@@ -353,11 +365,8 @@ tooltip ="Tag: IDS, Description: Parameter Creadet from IDS Requirement"
 ##############################################################################
 
 CreatMapping(RevitParameterMappingDataFrame)
-try:
-    CreatViewforIR(IDSName)
-    print(str('Ansicht {} neu erstellt').format(IDSName))
-except:
-    print('Ansicht existiert bereits')
+CreatViewforIR(IDSName)
+  
 ##__MAIN__##
 print()
 # Start Transaction:
@@ -374,6 +383,7 @@ for entity in dbDataFrame[IDSName]['IDSArg'].keys():
     if entity.upper().encode('utf-8') in dbDataFrame[IDSName]['IfcMapping']:
         if entity.upper().encode('utf-8').endswith('TYPE'):
             print('Creat new Family Parameter')
+
             MyFamily = GetFamily(doc, entity.upper().encode('utf-8'))
             print(MyFamily.familyDoc)
 
