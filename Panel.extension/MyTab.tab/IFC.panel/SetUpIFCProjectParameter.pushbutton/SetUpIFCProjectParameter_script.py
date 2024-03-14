@@ -11,7 +11,7 @@ import clr
 ##############################################################################
 
 ##############################################################################
-def SetUpStandardIfcParameter(app, doc, spFile, paramterGroupName, parameter_name, paramter_DataType, tooltip):
+def SetUpStandardIfcParameter(app, doc, spFile, paramterGroupName, parameter_name, paramter_DataType, tooltip, ParameterGroup, builtInCat):
   
     # Create a new group in the shared parameters file
 
@@ -44,11 +44,9 @@ def SetUpStandardIfcParameter(app, doc, spFile, paramterGroupName, parameter_nam
         # Set tooltip
         option.Description = tooltip
     
-        try:
-            my_definition_product_date = my_group.Definitions.Create(option)
-            print("Parameter created")
-        except:
-            print("Binding already exist")
+        my_definition_product_date = my_group.Definitions.Create(option)
+        print("Parameter created")
+
 
 
     else:
@@ -60,7 +58,7 @@ def SetUpStandardIfcParameter(app, doc, spFile, paramterGroupName, parameter_nam
     my_categories = app.Create.NewCategorySet()
 
     # Use BuiltInCategory to get the category of wall
-    my_category = Category.GetCategory(doc, BuiltInCategory.OST_ProjectInformation)
+    my_category = Category.GetCategory(doc, builtInCat)
 
 
     my_categories.Insert(my_category)
@@ -73,7 +71,7 @@ def SetUpStandardIfcParameter(app, doc, spFile, paramterGroupName, parameter_nam
     binding_map = doc.ParameterBindings
     # Bind the definitions to the document
     instance_bind_ok = binding_map.Insert(my_definition_product_date,
-                                        instance_binding, BuiltInParameterGroup.PG_IFC)
+                                        instance_binding, ParameterGroup)
     
     print("instance_bind_ok", instance_bind_ok)
     
@@ -96,8 +94,10 @@ spFile   = app.OpenSharedParameterFile()
 paramterGroupName = "StandardIFCParameter"
 paramter_DataType = SpecTypeId.String.Text
 tooltip ="tooltiop, new Paramter for a Projectinformatin"
+ParameterGroup = BuiltInParameterGroup.PG_IFC
 ####
 
+builtInCat = BuiltInCategory.OST_ProjectInformation
 
 # print(IFCExportOptions.FamilyMappingFile())
 
@@ -111,17 +111,39 @@ tooltip ="tooltiop, new Paramter for a Projectinformatin"
 
 
 # Start Transaction:
-t = Transaction(doc, "Set up IFC STandard PArameter for IFCProject, IFCSite, IFCBuilding")
+# t = Transaction(doc, "Set up IFC STandard PArameter for IFCProject, IFCSite, IFCBuilding")
+# t.Start()
+
+# # Changes
+# for parameter_name in parameterlistFromIDS  :
+#     SetUpStandardIfcParameter(app, doc, spFile, paramterGroupName, parameter_name, paramter_DataType, tooltip, ParameterGroup, builtInCat)
+#     print(parameter_name,  ' : ist sucsessfuly added to the Catecory Wall')
+
+# # End Transaction:
+# t.Commit()
+
+
+
+parameterlistFromClassification = ["ClassificationCode", "ClassificationCode(2)", "ClassificationCode(3)", "ClassificationCode(4)", "ClassificationCode(5)"]
+spFile   = app.OpenSharedParameterFile()
+paramterGroupName = "MultiClassification"
+paramter_DataType = SpecTypeId.String.Text
+tooltip ="Die Syntax zum Erstellen einer Klassifizierung lautet: [ClassificationName]Code:Title Beispiel: [Maturity]01:STATUS"
+ParameterGroup = BuiltInParameterGroup.PG_DATA
+builtInCat = [BuiltInCategory.OST_ProjectInformation, BuiltInCategory.OST_Rooms, BuiltInCategory.OST_PipeAccessory]
+
+# Start Transaction:
+t = Transaction(doc, "Set up Multi Classification")
 t.Start()
 
 # Changes
-for parameter_name in parameterlistFromIDS  :
-    SetUpStandardIfcParameter(app, doc, spFile, paramterGroupName, parameter_name, paramter_DataType, tooltip)
-    print(parameter_name,  ' : ist sucsessfuly added to the Catecory Wall')
+for parameter_name in parameterlistFromClassification:
+    for cat in builtInCat:
+        SetUpStandardIfcParameter(app, doc, spFile, paramterGroupName, parameter_name, paramter_DataType, tooltip, ParameterGroup, cat)
+        print(parameter_name,  ' : ist sucsessfuly added to the Catecory Wall')
 
 # End Transaction:
 t.Commit()
-
 ##############################################################################
 
 

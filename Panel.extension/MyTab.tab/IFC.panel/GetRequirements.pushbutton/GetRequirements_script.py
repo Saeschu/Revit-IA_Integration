@@ -17,6 +17,24 @@ uidoc = __revit__.ActiveUIDocument
 app = __revit__.Application
 
 ##############################################################################
+class Classification():
+    def __init__(self, ClassValue):
+        self.ClassValue = ClassValue
+        self.parse_input()
+
+    def parse_input(self):
+
+        parts = self.ClassValue.strip('[]').split(':')
+
+        self.Class = parts[0].split(']')[0]
+        self.Code = parts[0].split(']')[1]
+        
+        if len(parts) > 1:
+            self.Title = parts[1]
+        else:
+            self.Title = None
+
+
 def getImportedIDS():
     directory = 'C:\\temp\\revit'
     ImportedIDS = []
@@ -197,17 +215,22 @@ for IDSName in getImportedIDS():
     print(20*'-')
     for parameter in element.Parameters:
         # print(parameter)
-        if parameter.Definition.Name == 'Classification.Space.Number':
-            print(10*'-')
-            sp_Name = element.LookupParameter('Classification.Space.Description')
-            Selected_Dictionary = sp_Name.AsString()
-            Selected_Class = parameter.AsValueString()
+        if str(parameter.Definition.Name).startswith('ClassificationCode'):
+            ParameterValue = parameter.AsString()
+            if ParameterValue != None and len(ParameterValue) > 1:
 
-            print(Selected_Dictionary, Selected_Class)
+                print(10*'-')
+                print(parameter.Definition.Name, ParameterValue, 'Ende')
 
-            try:
-                getbSDDRequest(Selected_Dictionary, Selected_Class)
-            except:
-                print(f'Error occurs while bSDD request, Selected_Dictionary: {Selected_Dictionary}, Selected_Class: {Selected_Class}')
+                ClassValue = Classification(ParameterValue)
+                SelectedDictionary = ClassValue.Class
+                SelectedClass = ClassValue.Code
+
+                print(SelectedDictionary, SelectedClass)
+
+                try:
+                    getbSDDRequest(SelectedDictionary, SelectedClass)
+                except:
+                    print(f'Error occurs while bSDD request, Selected_Dictionary: {SelectedDictionary}, Selected_Class: {SelectedClass}')
 
     print('Ende')
