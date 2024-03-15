@@ -19,8 +19,6 @@ import sys
 import csv
 import os 
 
-
-
 from pyrevit import EXEC_PARAMS, DB
 from Autodesk.Revit.DB import *
 import System
@@ -39,15 +37,13 @@ dbPath = 'C:\\temp\\revit\\db.json'
 with open(ConfigPath) as ConfigFile:
     config = json.load(ConfigFile)
 
-
-
 ##############################################################################
 class Classification():
     def __init__(self, ClassValue):
         self.ClassValue = ClassValue
-        self.parse_input()
+        self.parseInput()
 
-    def parse_input(self):
+    def parseInput(self):
 
         parts = self.ClassValue.strip('[]').split(':')
         self.Class = parts[0].split(']')[0]
@@ -395,8 +391,7 @@ if config['IsIDSChecking'] == True:
                                     print('##')
 
                                     IrChecking(idsXml, IfcEntity, RevitElement)
-
-                                   
+                 
                     elif EXEC_PARAMS.event_args.GetTransactionNames()[0] == 'Modify type attributes':
 
                         try:

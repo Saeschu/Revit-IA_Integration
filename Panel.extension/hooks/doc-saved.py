@@ -1,13 +1,68 @@
 #! python3
-#############################################################################
+
+### SATART of CODE ImportIDS ###
+#Autor: Sascha Hostettler
+#Datum: 20.05.2024
+#Version: ?
+#Beschrieb: 
+#
+#
+### SATART of CODE ImportIDS ###
+# print('\n### SATART of CODE ImportIDS ###')
+##############################################################################
 import requests
 import json
 
+from pyrevit import EXEC_PARAMS, DB
 from Autodesk.Revit.DB import *
+import System
+from System import Enum
+
+# sys.path.append( '/Pnale.extenstion/lib')
+# from mymodule import get_RevitElementFromIFCmapping 
+
 ##############################################################################
 
 
 BASE_URL = 'https://api.bsdd.buildingsmart.org/'
+
+##############################################################################
+
+class Classification():
+    def __init__(self, ClassValue):
+        self.ClassValue = ClassValue
+        self.parseInput()
+
+    def parseInput(self):
+
+        parts = self.ClassValue.strip('[]').split(':')
+        self.Class = parts[0].split(']')[0]
+
+        if len(parts[0].split(']')) > 1:
+            self.Code = parts[0].split(']')[1]
+
+            if len(parts) > 1:
+                self.Title = parts[1]
+            else:
+                self.Title = None
+        else:
+            self.Code = None
+            self.Title = None
+
+class   ClassificationHandler:
+    def __init__(self, RevitElement, SelectedDictionary, SelectedClass):
+        self.RevitElement = RevitElement
+        self.SelectedDictionary = SelectedDictionary
+        self.SelectedClass = SelectedClass
+        self.parameterName = None
+        self.parameterValue = None
+        self.setParamter() 
+
+    def setParamter(self):
+        # try:
+        getbSDDRequest(self.RevitElement, self.SelectedDictionary, self.SelectedClass)
+        # except:
+            # print(f'Error occurs while bSDD request, Selected_Dictionary: {self.SelectedDictionary}, Selected_Class: {self.SelectedClass}')
 
 # get a liste of all domains
 def get_dictionaries():
@@ -39,9 +94,8 @@ def get_classInof(class_namespaceUri):
         return None
 
 
-def get_classProperties(doc, RevitElement, Selected_Dictionary, classInfo_namespaceUri):
+def get_classProperties(RevitElement, Selected_Dictionary, classInfo_namespaceUri):
     classInfo = get_classInof(classInfo_namespaceUri)
-                
     if "classProperties" not in classInfo:
         pass
     else:
@@ -51,28 +105,21 @@ def get_classProperties(doc, RevitElement, Selected_Dictionary, classInfo_namesp
             if "predefinedValue" not in classProperty:
                 print(f'      {classProperty["name"]}')
                 
-              
-
             elif "predefinedValue" in classProperty and classProperty['predefinedValue'] != []:
                 print(f'      {classProperty["name"]}  =  {classProperty["predefinedValue"]}')
                 
                 RevitParamter = RevitElement.LookupParameter(f'{Selected_Dictionary}.{classProperty["name"]}')
-
+                print(RevitParamter)
                 t = Transaction(doc, "Ergaenze Classification Parameter")
                 t.Start()
 
                 RevitParamter.Set(classProperty["predefinedValue"])
                 
                 t.Commit()
-
+                
     return True
 
-
-
-
-##__main__##
-
-def getbSDDRequest(doc, RevitElement, Selected_Dictionary, Selected_Class):
+def getbSDDRequest(RevitElement, Selected_Dictionary, Selected_Class):
   
     ## Dictionaries
     dictionaries = get_dictionaries()
@@ -101,9 +148,9 @@ def getbSDDRequest(doc, RevitElement, Selected_Dictionary, Selected_Class):
 
     classInfo = get_classInof(selectionClass[Selected_Class])
 
-    classProperties = get_classProperties(doc,RevitElement, Selected_Dictionary, classInfo['uri'])
+    classProperties = get_classProperties(RevitElement, Selected_Dictionary, classInfo['uri'])
 
     return classProperties
-    
-# print(get_dictionaries())
-# getbSDDRequest("FM waveware Spital", "Büro")
+
+# ClassValue = Classification(ParameterValue)
+# ClassificationHandler(RevitElement, ClassValue.Class, ClassValue.Code)

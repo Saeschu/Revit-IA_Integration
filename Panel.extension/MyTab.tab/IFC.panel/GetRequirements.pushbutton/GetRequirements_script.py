@@ -1,5 +1,13 @@
 #! python3
-
+### SATART of CODE getRequirements ###
+#Autor: Sascha Hostettler
+#Datum: 20.05.2024
+#Version: ?
+#Beschrieb: 
+#
+#
+### SATART of CODE ImportIDS ###
+# print('\n### SATART of CODE ImportIDS ###')
 #############################################################################
 import json
 from lib.bSDDRequest import getbSDDRequest
@@ -17,23 +25,6 @@ uidoc = __revit__.ActiveUIDocument
 app = __revit__.Application
 
 ##############################################################################
-class Classification():
-    def __init__(self, ClassValue):
-        self.ClassValue = ClassValue
-        self.parse_input()
-
-    def parse_input(self):
-
-        parts = self.ClassValue.strip('[]').split(':')
-
-        self.Class = parts[0].split(']')[0]
-        self.Code = parts[0].split(']')[1]
-        
-        if len(parts) > 1:
-            self.Title = parts[1]
-        else:
-            self.Title = None
-
 
 def getImportedIDS():
     directory = 'C:\\temp\\revit'
@@ -125,6 +116,44 @@ ElementTypeId = element.GetTypeId()
 elementType = doc.GetElement(ElementTypeId)
 cat = element.Category.Name
 ##############################################################################
+class Classification():
+    def __init__(self, ClassValue):
+        self.ClassValue = ClassValue
+        self.parseInput()
+
+    def parseInput(self):
+
+        parts = self.ClassValue.strip('[]').split(':')
+        self.Class = parts[0].split(']')[0]
+
+        if len(parts[0].split(']')) > 1:
+            self.Code = parts[0].split(']')[1]
+
+            if len(parts) > 1:
+                self.Title = parts[1]
+            else:
+                self.Title = None
+        else:
+            self.Code = None
+            self.Title = None
+
+class   ClassificationHandler:
+    def __init__(self, doc, RevitElement, SelectedDictionary, SelectedClass):
+        self.RevitElement = RevitElement
+        self.SelectedDictionary = SelectedDictionary
+        self.SelectedClass = SelectedClass
+        self.parameterName = None
+        self.parameterValue = None
+        self.doc = doc
+        self.setParamter() 
+
+    def setParamter(self):
+        # try:
+        getbSDDRequest(self.doc, self.RevitElement, self.SelectedDictionary, self.SelectedClass)
+        # except:
+            # print(f'Error occurs while bSDD request, Selected_Dictionary: {self.SelectedDictionary}, Selected_Class: {self.SelectedClass}')
+
+
 
 with open(dbPath) as file:
     dbDataFrame = json.load(file)
@@ -220,7 +249,7 @@ for IDSName in getImportedIDS():
             if ParameterValue != None and len(ParameterValue) > 1:
 
                 print(10*'-')
-                print(parameter.Definition.Name, ParameterValue, 'Ende')
+                print(parameter.Definition.Name, ParameterValue)
 
                 ClassValue = Classification(ParameterValue)
                 SelectedDictionary = ClassValue.Class
@@ -228,9 +257,10 @@ for IDSName in getImportedIDS():
 
                 print(SelectedDictionary, SelectedClass)
 
-                try:
-                    getbSDDRequest(SelectedDictionary, SelectedClass)
-                except:
-                    print(f'Error occurs while bSDD request, Selected_Dictionary: {SelectedDictionary}, Selected_Class: {SelectedClass}')
+                # try:
+                    # getbSDDRequest(SelectedDictionary, SelectedClass)
+                ClassificationHandler(doc, element, ClassValue.Class, ClassValue.Code)
+                # except:
+                    # print(f'Error occurs while bSDD request, Selected_Dictionary: {SelectedDictionary}, Selected_Class: {SelectedClass}')
 
     print('Ende')
