@@ -52,7 +52,7 @@ def get_classProperties(doc, RevitElement, Selected_Dictionary, classInfo_namesp
                 print(f'      {classProperty["name"]}')
                 
               
-            # ToDo Umbauen in Dic innerhalb feld Classxy
+
             elif "predefinedValue" in classProperty and classProperty['predefinedValue'] != []:
                 print(f'      {classProperty["name"]}  =  {classProperty["predefinedValue"]}')
                 

@@ -1,4 +1,14 @@
-
+### SATART of CODE SetUpIFCProjectParameter ###
+# Autor: Sascha Hostettler
+# Datum: 20.05.2024
+# Version: ?
+# Beschrieb: 
+# Nicht Teil des effektiven PoC, ist eine Unterstuetzungsfunktion zur Aufbereitung des Revitprojektes um eine bessere
+# IFC-Exportqualitaet zu erhaltne. Dies ist obsolet, wenn Projekttemplaets verwendet werden. 
+#
+### SATART of CODE SetUpIFCProjectParameter ###
+print('\n### SATART of CODE SetUpIFCProjectParameter ###')
+##############################################################################
 ##############################################################################
 # Import necessary Revit API classes
 from pyrevit import revit, DB

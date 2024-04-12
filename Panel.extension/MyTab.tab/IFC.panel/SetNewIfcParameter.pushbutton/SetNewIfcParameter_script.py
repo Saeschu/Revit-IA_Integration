@@ -1,20 +1,17 @@
 ### SATART of CODE ImportIDS ###
-#Autor: Sascha Hostettler
-#Datum: 20.05.2024
-#Version: ?
-#Beschrieb: 
-#
+# Autor: Sascha Hostettler
+# Datum: 20.05.2024
+# Version: ?
+# Beschrieb: 
+# Coden in IronPython um auf die durch PyRevit definierten Funktionen und KLassen zuzugreiffen um Anlegen von Parameter zu vereinfachen.
 #
 ### SATART of CODE ImportIDS ###
 print('\n### SATART of CODE ImportIDS ###')
 ##############################################################################
 
-# Import necessary Revit API classes
 from pyrevit import revit, DB, forms, script, EXEC_PARAMS
-# from pyrevit.forms import WPFWindow
 from Autodesk.Revit.DB import *
 import System
-# from System import *
 
 import clr
 import json
@@ -268,7 +265,7 @@ def CreatFamilyParameter(familyDoc, famMan, myFamParameter, paramterGroupName, p
     myGroups = spFile.Groups
 
     
-    #Pruefen ob die Gruppe beretis vorhanden ist oder nicht, anosten neu anlegen
+    #Pruefen ob die Gruppe bereits vorhanden ist oder nicht, ansonsten neu anlegen
     allGroups = {}
     for group in myGroups:
         allGroups[group.Name] = group
@@ -282,7 +279,7 @@ def CreatFamilyParameter(familyDoc, famMan, myFamParameter, paramterGroupName, p
         print(str("     Group alread exist: ") +  str(myGroup.Name))
 
 
-    #Pruefen ob der Parameter beretis vorhanden ist oder nicht, anosten neu anlegen
+    #Pruefen ob der Parameter bereits vorhanden ist oder nicht, ansonsten neu anlegen
     AllFamParamters = {}
     for parameter in myGroup.Definitions:
         AllFamParamters[parameter.Name] = parameter
@@ -345,7 +342,7 @@ dbJsonObject = open(dbJsonFile, "r")
 dbDataFrame = json.load(dbJsonObject)
 
 
-# Creat dataframe for IDSPropertySetDefined in Revit
+# Creat dataframe fuer IDSPropertySetDefined in Revit
 # try:
 RevitParameterMappingDataFrame = list( csv.reader(open(str(IDSPropertySetDefinedFolderPath) + str('\\') + str(IDSPropertySetDefinedFileName) + str('.txt'), 'r'), delimiter='\t')  )
 # except:
@@ -363,11 +360,12 @@ tooltip ="Tag: IDS, Description: Parameter Creadet from IDS Requirement"
 
 
 ##############################################################################
+##__MAIN__##
 
 CreatMapping(RevitParameterMappingDataFrame)
 CreatViewforIR(IDSName)
   
-##__MAIN__##
+
 print()
 # Start Transaction:
 # t = Transaction(doc, "Add Parameters from IDS to Categories")
@@ -381,9 +379,12 @@ print('\n## Verarbeite Attribute')
 for entity in dbDataFrame[IDSName]['IDSArg'].keys():
 
     if entity.upper().encode('utf-8') in dbDataFrame[IDSName]['IfcMapping']:
+        
+        # Ueberfuehren und Anlegen von Parameter auf ebene Revit Family/Familytype
         if entity.upper().encode('utf-8').endswith('TYPE'):
             print('Creat new Family Parameter')
-
+            
+            # Suche Family welche auf entsprechende IfcEntitaet gemappt ist
             MyFamily = GetFamily(doc, entity.upper().encode('utf-8'))
             print(MyFamily.familyDoc)
 
@@ -391,9 +392,8 @@ for entity in dbDataFrame[IDSName]['IDSArg'].keys():
                 myFamParameter = attribut
                 CreatFamilyParameter(MyFamily.familyDoc, MyFamily.famMan, myFamParameter, paramterGroupName, paramterDataType)
 
-
+        # Ueberfuehren und Anlegen von Parameter auf ebene Revit Kategorien
         else:
-
             IfcEentity = entity.upper().encode('utf-8')
             RevitCatecories = dbDataFrame[IDSName]['IfcMapping'][entity.upper().encode('utf-8')]
 
@@ -438,9 +438,12 @@ for line in RevitParameterMappingDataFrame:
                             RevitParamter = str(subline[1]).encode('utf-8')
 
                         if len(RevitCatecories) == 0:
+                            # Ueberfuehren und Anlegen von Parameter auf ebene Revit Family/Familytype
                             if entity.upper().encode('utf-8').endswith('TYPE'):
                                 print('Creat new Family Parameter')
                                 myFamParameter = RevitParamter
+
+                                # Suche Family welche auf entsprechende IfcEntitaet gemappt ist
                                 MyFamily = GetFamily(doc, entity.upper().encode('utf-8'))
                                 print(MyFamily.familyDoc, MyFamily.famMan, myFamParameter)
                                 CreatFamilyParameter(MyFamily.familyDoc, MyFamily.famMan, myFamParameter, paramterGroupName, paramterDataType)
@@ -451,7 +454,7 @@ for line in RevitParameterMappingDataFrame:
                         
                         else:
                             for RevitCatecoryName in RevitCatecories:
-                                                    
+                                # Ueberfuehren und Anlegen von Parameter auf ebene Revit Kategorien           
                                 if len(RevitCatecoryName.split('\t')) == 1:
                                     print(str('\n') + str(RevitCatecoryName) + ' :  ' + str(RevitParamter))
 

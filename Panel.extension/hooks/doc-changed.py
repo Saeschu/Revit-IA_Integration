@@ -1,11 +1,11 @@
 #! python3
 
 ### SATART of CODE ImportIDS ###
-#Autor: Sascha Hostettler
-#Datum: 20.05.2024
-#Version: ?
-#Beschrieb: 
-#
+# Autor: Sascha Hostettler
+# Datum: 20.05.2024
+# Version: ?
+# Beschrieb: 
+# Effektive Funktion zum Validieren der Eingaben gegen die geladenen Informationsanforderungen.
 #
 ### SATART of CODE ImportIDS ###
 # print('\n### SATART of CODE ImportIDS ###')
@@ -29,7 +29,7 @@ from System import Enum
 
 ##############################################################################
 
-# ConfigPath = "C:\\temp\\revit\\IsIDSChecking.json"
+# ConfigPath = "C:\\temp\\revit\\IsIDSChecking.json" # Alt
 ConfigPath = "C:\\Users\\Sascha Hostettler\\Documents\\GitHub\\pyRevit-IDS_bSDD\\Revit-IA_Integration\\Panel.extension\\lib\\config.json"
 
 dbPath = 'C:\\temp\\revit\\db.json'
@@ -146,7 +146,58 @@ def checkRequirementValue(requ, ParameterName, ParameterValue):
 
 #Requirements Facet
 def checkRequirements(RevitElement, requ):
-    if requ.__class__.__name__ == "Attribute":
+
+        ## ToDo: Attribut von reinem SingelValue auf Wertebreich umbauen.
+
+    if requ.__class__.__name__ == "Entity":
+
+        ## ToDo: Ausbauen um ueber Mappingfile gemappte Kategorien zu pruefen.
+        ## ToDo: Einbauen preufung gege geforderte abstrakte Entitaeten
+        
+        try:
+            RevitParameter = RevitElement.LookupParameter(f'Export to IFC As')
+            RevitParameterName = f'Export to IFC As' #Revit_parameter.Name
+            Revit_parameterValue = RevitParameter.AsValueString()
+            try:
+                RevitParameter = RevitElement.LookupParameter(f'Export Type to IFC As')
+                RevitParameterName = f'Export Type to IFC As' #Revit_parameter.Name
+                Revit_parameterValue = RevitParameter.AsValueString()
+            except:
+                print(f'Geforderter Parameter "Ifc Predefined Type" ist auf dem Typ nicht vorhanden')
+                Revit_parameterValue = None
+        except:
+            print(f'Geforderter Parameter "Ifc Predefined Type" ist auf dem Element nicht vorhanden')
+            Revit_parameterValue = None
+
+        if Revit_parameterValue != None:
+            if requ.get_usage() != 'prohibited':
+                checkRequirementValue(requ, RevitParameterName, Revit_parameterValue)
+            else:
+                print(f'WARNING : {RevitParameterName} : Parameterwert darf nicht vorhanden sein')
+
+        elif requ.get_usage() == 'required':
+            print(f'WARNING : {RevitParameterName} : Parameterwert muss vorhanden sein')
+
+        if requ.predefinedType != None:
+            
+            try:
+                RevitParameter = RevitElement.LookupParameter(f'Ifc Predefined Type')
+                RevitParameterName = f'Ifc Predefined Type' #Revit_parameter.Name
+                Revit_parameterValue = RevitParameter.AsValueString()
+            except:
+                print(f'Geforderter Parameter "Ifc Predefined Type" ist nicht vorhanden')
+                Revit_parameterValue = None
+
+            if Revit_parameterValue != None:
+                if requ.get_usage() != 'prohibited':
+                    checkRequirementValue(requ, RevitParameterName, Revit_parameterValue)
+                else:
+                    print(f'WARNING : {RevitParameterName} : Parameterwert darf nicht vorhanden sein')
+
+            elif requ.get_usage() == 'required':
+                print(f'WARNING : {RevitParameterName} : Parameterwert muss vorhanden sein')
+
+    elif requ.__class__.__name__ == "Attribute":
         
         try:
             RevitParameter = RevitElement.LookupParameter(f'Ifc{requ.name}')
@@ -179,6 +230,9 @@ def checkRequirements(RevitElement, requ):
 
         if RevitParameterName != None:
             if requ.get_usage() != 'prohibited':
+
+                ## ToDo: Check nur auf Datentyp
+
                 checkRequirementValue(requ, RevitParameterName, Revit_parameterValue)
             else:
                 print(f'WARNING : {RevitParameterName} : Parameterwert darf nicht vorhanden sein')
@@ -211,6 +265,10 @@ def checkRequirements(RevitElement, requ):
 
        
     elif requ.__class__.__name__ == "Parts":
+
+        ## ToDo: Filtern aller Elemente der RequEntity (ueberfuert auf Revit-Kategorie) und durchsuchen der DependetElements auf aktuelles Element
+        ## ToDo: Ueberfuehren der Relatio auf die Dependet von Revit
+
         requRelation = requ.relation 
         requEntity = requ.name
 
@@ -218,8 +276,7 @@ def checkRequirements(RevitElement, requ):
             if requEntity == "IfcBuildingStorey" and doc.GetElement(RevitElement.LevelId) == None:
                     print(f'WARNING :  Categeory muss vorhanden Teil von einer Ebene sein')
             
-            else:
-                #ToDo: Filtern aller Elemente der RequEntity (ueberfuert auf Kategory) und durchsuchen der DependetElements auf aktuelles Element
+            else:              
                 print(RevitElement.GetDependentElements)
                 # for element in RevitElement.GetDependentElements():
                     # print(GetCategory(doc, element.Id))
@@ -289,17 +346,20 @@ def forSetUpnewParamter(Parameter, BuiltInCategory):
 def IrChecking(idsXml, IfcEntity, RevitElement):
     MyIds = ifctester.open(idsXml)
                                     
-    #Specifications
+    # Specifications
     for specification in MyIds.specifications:
         
-        #Applicability 
+        # Applicability 
         for appli in specification.applicability:
-            #ToDo Bedingung für Kardinalität applicabilty definieren
-            #ToDo Regel einbauen, dass mehrer Appli kombiniert als Schnittmenge gelten, nur Prüfen wenn alle appli erfüllt sind
-            # print(appli.get_usage())
-            # print(len(appli))
+            ## ToDo Bedingung für Kardinalität applicabilty definieren
+            ## ToDo Regel einbauen, dass mehrer Appli kombiniert als Schnittmenge gelten, nur Prüfen wenn alle appli erfüllt sind
+
+            #print(appli.get_usage())
+            #print(len(appli))
             
             if appli.__class__.__name__ == 'Entity':
+
+                    ## ToDo: Preufen ob PredefinedType gesetzt ist, wenn ja zuerst pruefen ob Element diesen PredefinedType aufweist. 
 
                     appliName = appli.name
 
@@ -312,20 +372,31 @@ def IrChecking(idsXml, IfcEntity, RevitElement):
 
 
             elif appli.__class__.__name__ == 'Attribute':
+
+                ## ToDo: Preufen ob Attribut Value gesetzt ist, wenn ja zuerst pruefen ob Element bei diesem Parameter diesen Value aufweist. 
+
                 for parameter in RevitElement.Parameters:
 
                     if str(parameter.Definition.Name).upper() == str(f'Ifc{appli.name}').upper():
                         
                         chekingParameters(specification)        
 
+
             elif appli.__class__.__name__ == 'Property':
+
+                ## ToDo: Preufen ob Property Value gesetzt ist, wenn ja zuerst pruefen ob Element bei diesem Parameter diesen Value aufweist. 
+
                 for parameter in RevitElement.Parameters:
                         
                     if str(getIfcPropertyName(parameter.Definition.Name, RevitParameterMappingDataFrame)).upper() == str(appli.name).upper:
                         
                         chekingParameters(specification)
                 
+
             elif appli.__class__.__name__ == 'Classification':
+
+                ## ToDo: Preufen ob Classification Value gesetzt ist, wenn ja zuerst pruefen ob Element bei diesem Parameter (Classification) diesen Value aufweist. 
+
                 for parameter in RevitElement.Parameters:
 
                     if str(parameter.Definition.Name).startswith('Classification'):
@@ -334,6 +405,9 @@ def IrChecking(idsXml, IfcEntity, RevitElement):
 
 
             elif appli.__class__.__name__ == 'Parts':
+
+                ## ToDo: Preufen ob Parts Relation gesetzt ist, wenn ja zuerst pruefen ob Element diese Relation aufweist. 
+
                 for dependetElement in RevitElement.GetDependentElements():
                     checkRequirements(dependetElement, requ)
         
@@ -345,44 +419,45 @@ def IrChecking(idsXml, IfcEntity, RevitElement):
     # print(f'Applicability  {appli.name} - Requirement {requ.__class__.__name__}, {requ.name} : {requ.value} , {type(requ.value)}')
 
 ##############################################################################
-##### __MAIN__ #####
+## __MAIN__ ##
 
+# Validierung wird bei jeder Aenderung der Autodesk.DB getrigger, daher durchlaufen Code nur, wenn IsIDSChecking aktiviert.
 if config['IsIDSChecking'] == True:
 
     if len(EXEC_PARAMS.event_args.GetModifiedElementIds()) > 0 and config['IsIDSChecking'] == True:
         print(20*'-')
         print(EXEC_PARAMS.event_args.GetTransactionNames()) 
       
-        #oeffnen der db
+        # Oeffnen der db
         with open(dbPath) as file:
             dbDataFrame = json.load(file)
 
-        #Kontrelle der IR fuer jedes importierte IDS
+        # Validierung durchlaufen fuer jedes importierte IDS
         for IDSName in getImportedIDS():
             if IDSName in dbDataFrame:
                 print(str('\n### ') + str(IDSName) + ' ###')
                 idsXml = f'C:\\temp\\revit\\{IDSName}.xml' 
                 RevitParameterMappingDataFrame = getRevitParameterMappingDataFrame(IDSName)
 
-                #Kontrolle aller geaenderte Elementen 
+                # Validierung aller geaenderte Elementen 
                 for elementId in EXEC_PARAMS.event_args.GetModifiedElementIds():
 
                     doc = EXEC_PARAMS.event_args.GetDocument()
                     cat = None           
                     RevitElement = doc.GetElement(elementId)
-                    # RevitElement.GetChangeTypeAny()
 
+                    # Unterscheiden ob Instanz oder Typ geaendert wurde
                     if EXEC_PARAMS.event_args.GetTransactionNames()[0] == 'Modify element attributes':
                         cat = RevitElement.Category.Name
 
-
+                        # Unoetiges durchlaufend von Elementen vermeiden
                         if cat != None and cat != 'Schedules':
                             print(30*'-')
-                            print(str('## element.Category.Name: "') + str(cat) + str('" get Checked'))
+                            print(str('## element.Category.Name: "') + str(cat) + str('" get validated'))
                             print(30*'-')
                     
                             
-                            #Ist die Category teil der Anforderung
+                            # Ist die Category des geanderten Element Teil der Anforderung
                             for IfcEntity in dbDataFrame[IDSName]['IfcMapping']:
                                 if str(cat) in dbDataFrame[IDSName]['IfcMapping'][IfcEntity]:
 
@@ -390,6 +465,7 @@ if config['IsIDSChecking'] == True:
                                     print(dbDataFrame[IDSName]['IfcMapping'][IfcEntity])
                                     print('##')
 
+                                    # Validierung aller Parameter, des geaenderten Elementes gegen das IDS
                                     IrChecking(idsXml, IfcEntity, RevitElement)
                  
                     elif EXEC_PARAMS.event_args.GetTransactionNames()[0] == 'Modify type attributes':
@@ -402,6 +478,7 @@ if config['IsIDSChecking'] == True:
                                 print(f'## Revit Element of Type : {RevitElement}')
                                 print('##')
 
+                                # Validierung aller Parameter, des geaenderten Types gegen das IDS
                                 IrChecking(idsXml, IfcEntity, RevitElement)
 
                         except:

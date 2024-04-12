@@ -1,4 +1,13 @@
-
+### SATART of CODE StartIDSValidation ###
+# Autor: Sascha Hostettler
+# Datum: 20.05.2024
+# Version: ?
+# Beschrieb: 
+# Ist eine unterstuetzende Funktion um das IDS Testing zu starten oder beenden. Effektive Funktion ist ueber den Hook "Doc-changed" getriggert.
+#
+### SATART of CODE StartIDSValidation ###
+print('\n### SATART of CODE StartIDSValidation ###')
+##############################################################################
 ##############################################################################
 import json
 from pyrevit.coreutils.ribbon import ICON_MEDIUM

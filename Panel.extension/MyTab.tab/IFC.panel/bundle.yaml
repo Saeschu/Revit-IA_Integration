@@ -1,9 +1,9 @@
 layout:
-  - SetUpIFCProjectParameter
   - ImportIDS 
   - SetNewIfcParameter
-  - StartIDSTesting
+  - StartIDSValidation
   - GetRequirements
+  - GetbSDDClass
   - ExportIFC
   
   

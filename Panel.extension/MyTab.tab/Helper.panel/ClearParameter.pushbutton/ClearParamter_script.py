@@ -1,4 +1,14 @@
 
+### SATART of CODE ClearParameter ###
+# Autor: Sascha Hostettler
+# Datum: 20.05.2024
+# Version: ?
+# Beschrieb: 
+# Ist nicht Teil des PoC, ist eine unterstuetzende Funktion um alle durch einen IDS-Import angelegten Parameter, Daten und Files zu loeschen.
+#
+### SATART of CODE ClearParameter ###
+print('\n### SATART of CODE ClearParameter ###')
+##############################################################################
 # ##############################################################################
 import os
 import json
