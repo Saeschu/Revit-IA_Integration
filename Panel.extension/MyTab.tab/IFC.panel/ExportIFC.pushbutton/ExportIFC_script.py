@@ -32,17 +32,17 @@ class GetIDSFile:
             if os.path.isfile(os.path.join(self.directory, filename)):
                 if str(filename).endswith('.xml'):
                     self.names.append(str(filename.split('.')[0]).encode('utf-8'))
-                    self.files[filename.split('.')[0]] = str(os.path.join(self.directory, filename)).encode('utf-8)')
+                    self.files[filename.split('.')[0]] = str(os.path.join(self.directory, filename)) #.encode('utf-8)')
 
 
                     
 class MyIfcExport:
     def __init__(self, FilePath, IDSName):
-        self.IDSName = str(IDSName).encode('utf-8')
-        self.FilePath = str(FilePath).encode('utf-8')
-        self.IFCName = str(f'IfcExport_{IDSName}').encode('utf-8')
-        self.IfcFile = str(f'{self.FilePath}\\{self.IFCName}.ifc').encode('utf-8')
-        self.ExportUserDefinedPsetsFile = str(f'C:\\ProgramData\\Autodesk\\ApplicationPlugins\\IFC 2021.bundle\\Contents\\2021\\IDSPropertySetDefined_{self.IDSName}.txt').encode('utf-8')
+        self.IDSName = str(IDSName) #.encode('utf-8')
+        self.FilePath = str(FilePath) #.encode('utf-8')
+        self.IFCName = str(f'IfcExport_{IDSName}') #.encode('utf-8')
+        self.IfcFile = str(f'{self.FilePath}\\{self.IFCName}.ifc') #.encode('utf-8')
+        self.ExportUserDefinedPsetsFile = str(f'C:\\ProgramData\\Autodesk\\ApplicationPlugins\\IFC 2021.bundle\\Contents\\2021\\IDSPropertySetDefined_{self.IDSName}.txt') #.encode('utf-8')
         
 
 
@@ -76,8 +76,8 @@ print("Informationsanforderung auswaehlen um dazupassenden IFC Export auszuloese
 for item in GetIDSFile().names:
     print(item)
 
-# IDSName = str(input('Eingabe IDS Name: '))
-IDSName = 'IDS'
+IDSName = str(input('Eingabe IDS Name fuer welche Informationsanforderung der Export erfolgen soll: '))
+IDSName = str('IDS')
 print(IDSName)
 
 # TargetFolder = str(input ('Eingabe Speicherpfad für IfcDatei: '))
@@ -86,7 +86,7 @@ print(TargetFolder)
 
 MyExport = MyIfcExport(TargetFolder, IDSName)
 IDSFiles = GetIDSFile().files
-IfcFile = str(str(f'{TargetFolder}\\\\IfcExport_{IDSName}.ifc').encode('utf-8'))
+IfcFile = str(str(f'{TargetFolder}\\\\IfcExport_{IDSName}.ifc')) #.encode('utf-8'))
 print(IfcFile)
 
 
@@ -106,6 +106,7 @@ MyIDS = ifctester.open(IDSFiles[IDSName])
 # validate IFC model against IDS requirements:
 MyIDS.validate(MyIfc)
 
+print('##__Validation Ifc-Export__##')
 # show results:
 reporter.Console(MyIDS).report()
 # ENDE of CODE ###
