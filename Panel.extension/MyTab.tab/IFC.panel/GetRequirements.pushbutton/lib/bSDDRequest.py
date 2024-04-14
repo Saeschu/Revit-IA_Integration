@@ -39,7 +39,7 @@ def get_classInof(class_namespaceUri):
         return None
 
 
-def get_classProperties(doc, RevitElement, Selected_Dictionary, classInfo_namespaceUri):
+def get_classProperties(doc, RevitElement, RevitSourceParamter, classInfo_namespaceUri):
     classInfo = get_classInof(classInfo_namespaceUri)
                 
     if "classProperties" not in classInfo:
@@ -47,23 +47,28 @@ def get_classProperties(doc, RevitElement, Selected_Dictionary, classInfo_namesp
     else:
         print(f"Properties of the Class {classInfo['name']} are:")
         
+        ClassPropertyList = []
         for classProperty in classInfo["classProperties"]:
             if "predefinedValue" not in classProperty:
                 print(f'      {classProperty["name"]}')
                 
+                
               
             # ToDo Umbauen in Dic innerhalb feld Classxy
             elif "predefinedValue" in classProperty and classProperty['predefinedValue'] != []:
+                ClassPropertyList.append(str(classProperty["name"] + '\n'))
                 print(f'      {classProperty["name"]}  =  {classProperty["predefinedValue"]}')
                 
-                RevitParamter = RevitElement.LookupParameter(f'{Selected_Dictionary}.{classProperty["name"]}')
+        RevitParamter = RevitElement.LookupParameter(f'{RevitSourceParamter} Description')
+        print(f'Paramtername: {RevitSourceParamter} Description')
+        print(f'ParameterValue: {ClassPropertyList}')
 
-                t = Transaction(doc, "Ergaenze Classification Parameter")
-                t.Start()
-
-                RevitParamter.Set(classProperty["predefinedValue"])
-                
-                t.Commit()
+        t = Transaction(doc, "Ergaenze Classification Parameter")
+        t.Start()
+        # classProperty["predefinedValue"])
+        RevitParamter.Set(ClassPropertyList)
+        
+        t.Commit()
 
     return True
 
@@ -100,8 +105,9 @@ def getbSDDRequest(doc, RevitElement, Selected_Dictionary, Selected_Class):
             break
 
     classInfo = get_classInof(selectionClass[Selected_Class])
-
-    classProperties = get_classProperties(doc,RevitElement, Selected_Dictionary, classInfo['uri'])
+    
+    RevitSourceParamter = "ClassifiacationCode"
+    classProperties = get_classProperties(doc,RevitElement, RevitSourceParamter, classInfo['uri'])
 
     return classProperties
     

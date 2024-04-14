@@ -3,7 +3,7 @@
 import requests
 import json
 
-from Autodesk.Revit.DB import *
+# from Autodesk.Revit.DB import *
 ##############################################################################
 
 
@@ -26,7 +26,7 @@ def get_classes(Dictionary_namespaceUri):
     if response.status_code == 200:
         return response.json()
     else:
-        print(response.text)
+        # print(response.text)
         return None
 
 def get_classInof(class_namespaceUri):
@@ -39,55 +39,47 @@ def get_classInof(class_namespaceUri):
         return None
 
 
-def get_classProperties(doc, RevitElement, Selected_Dictionary, classInfo_namespaceUri):
+def get_classProperties(classInfo_namespaceUri):
     classInfo = get_classInof(classInfo_namespaceUri)
-                
+    ClassPropertyList = []
+
     if "classProperties" not in classInfo:
+        print(f'- {classInfo["name"]}')
         pass
     else:
-        print(f"Properties of the Class {classInfo['name']} are:")
+        print(f"\nProperties der Class {classInfo['name']} sind:")
+        
         
         for classProperty in classInfo["classProperties"]:
             if "predefinedValue" not in classProperty:
                 print(f'      {classProperty["name"]}')
                 
-              
-
             elif "predefinedValue" in classProperty and classProperty['predefinedValue'] != []:
-                print(f'      {classProperty["name"]}  =  {classProperty["predefinedValue"]}')
-                
-                RevitParamter = RevitElement.LookupParameter(f'{Selected_Dictionary}.{classProperty["name"]}')
+                ClassPropertyList.append(f'{classProperty["name"]} : {classProperty["predefinedValue"]}\n')
 
-                t = Transaction(doc, "Ergaenze Classification Parameter")
-                t.Start()
+                print(f'-      {classProperty["name"]}  =  {classProperty["predefinedValue"]}') 
 
-                RevitParamter.Set(classProperty["predefinedValue"])
-                
-                t.Commit()
-
-    return True
+    return classInfo, ClassPropertyList
 
 
 
 
 ##__main__##
 
-def getbSDDRequest(doc, RevitElement, Selected_Dictionary, Selected_Class):
+def getbSDDRequest(Selected_Dictionary, Selected_Class):
   
     ## Dictionaries
     dictionaries = get_dictionaries()
 
     selectionDic = {}
     for dictionary in dictionaries['dictionaries']:
-       
-        if dictionary['name'] == Selected_Dictionary:
-            
+        if dictionary['name'] == str(Selected_Dictionary):
             selectionDic[str(dictionary['name'])] = dictionary['uri']
             selectionDic['oriDict'] = dictionary
-           
+
             break
 
-   
+    
     bsddClasses = get_classes(selectionDic[Selected_Dictionary])
     
     selectionClass = {}
@@ -97,13 +89,13 @@ def getbSDDRequest(doc, RevitElement, Selected_Dictionary, Selected_Class):
             selectionClass[str(bsddClass['name'])] = bsddClass['uri']
             selectionClass['oriDict'] = bsddClass
             
-            break
 
     classInfo = get_classInof(selectionClass[Selected_Class])
-
-    classProperties = get_classProperties(doc,RevitElement, Selected_Dictionary, classInfo['uri'])
+    
+    classProperties = get_classProperties(classInfo['uri'])[1]
 
     return classProperties
     
 # print(get_dictionaries())
 # getbSDDRequest("FM waveware Spital", "Büro")
+

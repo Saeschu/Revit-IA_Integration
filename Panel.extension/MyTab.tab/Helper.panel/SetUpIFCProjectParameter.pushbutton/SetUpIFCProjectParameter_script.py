@@ -98,6 +98,8 @@ app = __revit__.Application
 ##############################################################################
 #Imput Data
 # parameterlistFromIDS = ['IfcGUID', 'IfcName', 'IfcDescription','IFC Predefined Typ', 'IfcObjectType']
+## ToDo: Egänzen ClassificationCode - ClassificationCode(9) inkl. Description
+
 parameterlistFromIDS = ["IfcDescription", "IfcObjectType", "SiteName", "SiteDescription", "SiteLandTitleNumber", "SiteLongName", "SiteObjectType", "BuildingDescription", "BuildingLongName", "BuildingObjectType" ]
 ####
 spFile   = app.OpenSharedParameterFile()

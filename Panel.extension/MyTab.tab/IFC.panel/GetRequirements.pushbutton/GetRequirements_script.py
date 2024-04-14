@@ -242,25 +242,30 @@ for IDSName in getImportedIDS():
 
 
     print(20*'-')
-    for parameter in element.Parameters:
-        # print(parameter)
-        if str(parameter.Definition.Name).startswith('ClassificationCode'):
-            ParameterValue = parameter.AsString()
-            if ParameterValue != None and len(ParameterValue) > 1:
 
-                print(10*'-')
-                print(parameter.Definition.Name, ParameterValue)
+    ## neu in getbSDDClass
+    
+    # for parameter in element.Parameters:
+    #     # print(parameter)
+    #     if str(parameter.Definition.Name).startswith('ClassificationCode'):
+    #         ParameterValue = parameter.AsString()
+    #         RevitSourceParamter = parameter.Definition.Name
+    #         if ParameterValue != None and len(ParameterValue) > 1:
 
-                ClassValue = Classification(ParameterValue)
-                SelectedDictionary = ClassValue.Class
-                SelectedClass = ClassValue.Code
+    #             print(10*'-')
+    #             print(parameter.Definition.Name, ParameterValue)
 
-                print(SelectedDictionary, SelectedClass)
+    #             ClassValue = Classification(ParameterValue)
+    #             SelectedDictionary = ClassValue.Class
+    #             SelectedClass = ClassValue.Code
 
-                # try:
-                    # getbSDDRequest(SelectedDictionary, SelectedClass)
-                ClassificationHandler(doc, element, ClassValue.Class, ClassValue.Code)
-                # except:
-                    # print(f'Error occurs while bSDD request, Selected_Dictionary: {SelectedDictionary}, Selected_Class: {SelectedClass}')
+    #             print(SelectedDictionary, SelectedClass)
 
-    print('Ende')
+    #             # try:
+    #                 # getbSDDRequest(SelectedDictionary, SelectedClass)
+    #             ClassificationHandler(doc, element, ClassValue.Class, ClassValue.Code)
+    #             # except:
+    #                 # print(f'Error occurs while bSDD request, Selected_Dictionary: {SelectedDictionary}, Selected_Class: {SelectedClass}')
+    
+    # print(print(10*'-'))
+    # print('\n## Ende ##')
