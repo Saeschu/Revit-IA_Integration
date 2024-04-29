@@ -92,7 +92,7 @@ print(IfcFile)
 
 if TargetFolder and IDSName:
     # Start Transaction:
-    t = Transaction(doc, "Add Parameters from IDS to Wall-elements")
+    t = Transaction(doc, "Export IFC zu dem gewaeltem IDS")
     t.Start()
 
     print("export :" + str(MyExport.IfcExport()))

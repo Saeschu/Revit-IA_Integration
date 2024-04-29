@@ -37,6 +37,7 @@ def getImportedIDS():
     return ImportedIDS 
 
 #Check Requirements
+## ToDo: Ergaenzen Mapping von requ.name auf Parameterbezeichnung (einbau Func getIfcPropertyName)
 def getRequirements(requ, appliName):
 
     print(f'All {appliName} data')
