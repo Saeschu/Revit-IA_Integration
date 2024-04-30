@@ -197,6 +197,7 @@ def checkRequirements(RevitElement, requ):
             elif requ.get_usage() == 'required':
                 print(f'WARNING : {RevitParameterName} : Parameterwert muss vorhanden sein')
 
+
     elif requ.__class__.__name__ == "Attribute":
         
         try:
@@ -350,12 +351,14 @@ def IrChecking(idsXml, IfcEntity, RevitElement):
     for specification in MyIds.specifications:
         
         # Applicability 
+        isAppli = False
         for appli in specification.applicability:
+            
             ## ToDo Bedingung für Kardinalität applicabilty definieren
-            ## ToDo Regel einbauen, dass mehrer Appli kombiniert als Schnittmenge gelten, nur Prüfen wenn alle appli erfüllt sind
-
+            ## ToDo Beruecksichtigen von anderweitigen Restriktionen als SimpleValues in Applicability
+           
             #print(appli.get_usage())
-            #print(len(appli))
+            print(appli)
             
             if appli.__class__.__name__ == 'Entity':
 
@@ -364,44 +367,84 @@ def IrChecking(idsXml, IfcEntity, RevitElement):
                     appliName = appli.name
 
                     if str(appliName).upper() == str(IfcEntity).upper():
-                        print(f'{str(appliName).upper()} = {str(IfcEntity).upper()}')
-
-                        for requ in specification.requirements:
-                            print(10*'-')
-                            checkRequirements(RevitElement, requ)
+                        
+                        if appli.predefinedType != None:
+                            RevitParameter = RevitElement.LookupParameter(f'IFC Predefined Type')
+                            if type(appli.predefinedType) == str and appli.predefinedType == RevitParameter.AsValueString():
+                                isAppli = True
+                            else:
+                                isAppli = False
+                                break
+                    else:
+                        isAppli = False
+                        # print('Entity = False')
+                        # for requ in specification.requirements:
+                        #     print(10*'-')
+                        #     checkRequirements(RevitElement, requ)
 
 
             elif appli.__class__.__name__ == 'Attribute':
 
-                ## ToDo: Preufen ob Attribut Value gesetzt ist, wenn ja zuerst pruefen ob Element bei diesem Parameter diesen Value aufweist. 
-
                 for parameter in RevitElement.Parameters:
 
                     if str(parameter.Definition.Name).upper() == str(f'Ifc{appli.name}').upper():
-                        
-                        chekingParameters(specification)        
+                        if appli.value != None:
+                            if type(appli.value) == str and appli.value == parameter.AsValueString():
+                                isAppli = True
+                            else:
+                                isAppli = False
+                                break
+                        else:
+                            isAppli = True
+                        # print(f'{str(parameter.Definition.Name).upper()} = {str(f"Ifc{appli.name}").upper()}')
+                        break
+
+                    else:
+                        isAppli = False
+                        # print('Attribute = False')      
 
 
             elif appli.__class__.__name__ == 'Property':
 
-                ## ToDo: Preufen ob Property Value gesetzt ist, wenn ja zuerst pruefen ob Element bei diesem Parameter diesen Value aufweist. 
-
                 for parameter in RevitElement.Parameters:
                         
                     if str(getIfcPropertyName(parameter.Definition.Name, RevitParameterMappingDataFrame)).upper() == str(appli.name).upper:
-                        
-                        chekingParameters(specification)
+                        if appli.value != None:
+                            if type(appli.value) == str and appli.value == parameter.AsValueString():
+                                isAppli = True
+                            else:
+                                isAppli = False
+                                break
+                        else:
+                            isAppli = True
+                        break
+                    
+                    else:
+                        isAppli = False
+                        # print('Property = False')
                 
 
             elif appli.__class__.__name__ == 'Classification':
 
-                ## ToDo: Preufen ob Classification Value gesetzt ist, wenn ja zuerst pruefen ob Element bei diesem Parameter (Classification) diesen Value aufweist. 
-
                 for parameter in RevitElement.Parameters:
 
                     if str(parameter.Definition.Name).startswith('Classification'):
-                        
-                        chekingParameters(specification)
+                        ClassValue = Classification(parameter.AsString())
+                        if appli.system != None and appli.value == None:
+                            if type(appli.system) == str and appli.system == ClassValue.Class:
+                                isAppli = True
+    
+                        elif appli.system != None and appli.value != None:
+                            if type(appli.system) == str and type(appli.value) == str and appli.system == ClassValue.Class and appli.system == ClassValue.Code:
+                                isAppli = True
+
+                        else:
+                            isAppli == False
+                            break
+                    else:
+                        isAppli = False
+                        break
+                        # print('Classification = False')
 
 
             elif appli.__class__.__name__ == 'Parts':
@@ -409,15 +452,21 @@ def IrChecking(idsXml, IfcEntity, RevitElement):
                 ## ToDo: Preufen ob Parts Relation gesetzt ist, wenn ja zuerst pruefen ob Element diese Relation aufweist. 
 
                 for dependetElement in RevitElement.GetDependentElements():
-                    checkRequirements(dependetElement, requ)
-        
+
+                    chekingParameters(dependetElement)
             
             elif appli.__class__.__name__ == 'Material':
                 # GetMaterialIds (Boolean): ICollection<ElementId>
                 print('Applicability is at Facet Material, Checking is in procress')  
 
-    # print(f'Applicability  {appli.name} - Requirement {requ.__class__.__name__}, {requ.name} : {requ.value} , {type(requ.value)}')
 
+        print(isAppli)
+        #für Kummulation von Applicabilities
+        if isAppli == True:
+            chekingParameters(specification)
+
+    # print(f'Applicability  {appli.name} - Requirement {requ.__class__.__name__}, {requ.name} : {requ.value} , {type(requ.value)}')
+        
 ##############################################################################
 ## __MAIN__ ##
 

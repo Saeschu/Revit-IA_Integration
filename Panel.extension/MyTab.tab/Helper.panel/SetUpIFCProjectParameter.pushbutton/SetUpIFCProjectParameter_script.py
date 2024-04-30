@@ -136,7 +136,7 @@ builtInCat = BuiltInCategory.OST_ProjectInformation
 
 
 
-parameterlistFromClassification = ["ClassificationCode", "ClassificationCode(2)", "ClassificationCode(3)", "ClassificationCode(4)", "ClassificationCode(5)"]
+parameterlistFromClassification = ["ClassificationCode", "ClassificationCode Desctiption", "ClassificationCode(2)", "ClassificationCode(2) Desctiption", "ClassificationCode(3)","ClassificationCode(3) Desctiption", "ClassificationCode(4)", "ClassificationCode(4) Desctiption", "ClassificationCode(5)", "ClassificationCode(5) Desctiption"]
 spFile   = app.OpenSharedParameterFile()
 paramterGroupName = "MultiClassification"
 paramter_DataType = SpecTypeId.String.Text
