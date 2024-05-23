@@ -101,7 +101,7 @@ def getImportedIDS():
 def getRequirements(requ, appliName):
 
     if requ.__class__.__name__ == "Classification":
-        # print(f'All {appliName} data')
+        # Klassifikatinen werden anhand der Informationsanforderung mit Klassifikationssystem und code gesucht und aufgelistet
         if requ.value != None:                                            
             if requ.get_usage() == 'required':
                 print(f'Shall have a {requ.system} reference of {requ.value}')
@@ -126,6 +126,7 @@ def getRequirements(requ, appliName):
                 return None, None
             
         else:
+            # Klassifikatinen werden anhand der Informationsanforderung mit Klassifikationssystem und der assoziation der klassifikation auf bsdd aufgelistet
             if requ.get_usage() == 'required':
                 print(f'Shall be classified using {requ.system}')
                 print('Moegliche selektionen : System')
@@ -138,6 +139,9 @@ def getRequirements(requ, appliName):
                             if classItem['classType'] =='Class':
                                 Class = get_classInof(classItem["uri"])
                                 if Class != None and 'parentClassReference' not in Class and appliName in Class['relatedIfcEntityNames']:
+                                    
+                                    # ToDo: Falls ClassPropert != None: Abfragen aller Propoerties der Klassifikation und vergelich mit gemappten Paramter in Revit, falls Wert = Wert ClassParamter ist Klassifikation zugelassen.
+                                    
                                     print(f'- {Class["name"]}')
                                     ParentClass[Class['name']] = Class['uri']
 

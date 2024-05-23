@@ -429,7 +429,7 @@ for line in RevitParameterMappingDataFrame:
 
                 for subline in RevitParameterMappingDataFrame[pos + 1:]:
 
-                    if subline[0] =='':
+                    if subline[0] == '':
                         IfcProperty = str(subline[1]).encode('utf-8')
 
                         if subline[3] != '':

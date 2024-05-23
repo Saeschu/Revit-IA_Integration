@@ -1,6 +1,6 @@
 layout:
   - ImportIDS 
-  - SetNewIfcParameter
+  - SetUpParameter
   - StartIDSValidation
   - GetRequirements
   - GetbSDDClass
